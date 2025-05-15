@@ -3,7 +3,7 @@
     "biomejs.biome",
     "esbenp.prettier-vscode",
     "bradlc.vscode-tailwindcss",
-    "george-alisson.html-preview-vscode",
+    "tht13.html-preview-vscode",
     "christian-kohler.path-intellisense"
   ]
 }
