@@ -11,6 +11,11 @@ export default defineSchema({
     key: v.string(), // The presentation key that identifies this presentation
     currentSlide: v.number(), // The current slide number
     lastUpdated: v.number(), // Timestamp of last update
+    activePresentation: v.optional(
+      v.object({
+        presenterId: v.string(), // Session ID of the current presenter
+      })
+    ), // Optional object containing presenter information
   }).index('by_key', ['key']),
 
   // auth

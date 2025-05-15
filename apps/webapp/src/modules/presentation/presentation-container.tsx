@@ -23,7 +23,14 @@ type PresentationContextType = {
   goToSlide: (index: number) => void;
   controlsVisible: boolean;
   isSynced: boolean;
-  toggleSyncMode: () => void;
+  isPresenter: boolean;
+  isPresentationActive: boolean;
+  isFollowing: boolean;
+  isSoloMode: boolean;
+  sessionId: string;
+  startPresenting: () => void;
+  stopPresenting: () => void;
+  followPresenter: () => void;
 };
 
 const PresentationContext = createContext<PresentationContextType | null>(null);
@@ -40,7 +47,7 @@ interface PresentationContainerProps {
   children: React.ReactNode;
   totalSlides: number;
   className?: string;
-  presentationKey?: string;
+  presentationKey: string;
   fallback?: React.ReactNode;
 }
 
@@ -81,17 +88,22 @@ function PresentationContainerInner({
     nextSlide: nextSlideSync,
     previousSlide: previousSlideSync,
     goToSlide: goToSlideSync,
-    isSyncEnabled,
-    toggleSyncMode,
+    isPresenter,
+    isPresentationActive,
+    isFollowing,
+    isSoloMode,
+    sessionId,
+    startPresenting,
+    stopPresenting,
+    followPresenter,
   } = usePresentationSync({
-    key: presentationKey || '',
+    key: presentationKey,
     initialSlide: !Number.isNaN(initialSlide) ? initialSlide : 1,
     totalSlides,
-    enabled: !!presentationKey,
   });
 
-  // Use isSyncEnabled from the hook which reads from URL
-  const isSynced = isSyncEnabled && !!presentationKey;
+  // Sync is always enabled since presentationKey is mandatory
+  const isSynced = true;
 
   // Handle fullscreen changes from outside (e.g., Escape key)
   useEffect(() => {
@@ -195,7 +207,14 @@ function PresentationContainerInner({
         goToSlide,
         controlsVisible,
         isSynced,
-        toggleSyncMode,
+        isPresenter,
+        isPresentationActive,
+        isFollowing,
+        isSoloMode,
+        sessionId,
+        startPresenting,
+        stopPresenting,
+        followPresenter,
       }}
     >
       <div
