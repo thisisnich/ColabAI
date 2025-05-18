@@ -37,6 +37,13 @@ export function ConclusionForm({ onSubmit, onCancel, existingConclusion }: Concl
   const [isSubmitting, setIsSubmitting] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const formRef = useRef<HTMLFormElement>(null);
+  const [isMac, setIsMac] = useState(false);
+
+  // Detect OS for keyboard shortcut display
+  useEffect(() => {
+    setIsMac(typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.userAgent));
+  }, []);
 
   // Register input ref
   const registerInputRef = useCallback(
@@ -105,8 +112,23 @@ export function ConclusionForm({ onSubmit, onCancel, existingConclusion }: Concl
     setConclusions(conclusions.map((c) => (c.id === id ? { ...c, tag: value } : c)));
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, id: string) => {
+    // Cmd/Ctrl + Enter to submit the form
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      formRef.current?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      return;
+    }
+
+    // Enter to add a new conclusion line
+    if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault();
+      addConclusion();
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 flex flex-col">
+    <form onSubmit={handleSubmit} className="space-y-4 flex flex-col" ref={formRef}>
       <div ref={containerRef} className="max-h-[300px] overflow-y-auto pr-1">
         {conclusions.map((conclusion) => (
           <div key={conclusion.id} className="flex items-center gap-2 p-2 relative">
@@ -115,6 +137,7 @@ export function ConclusionForm({ onSubmit, onCancel, existingConclusion }: Concl
               placeholder="Enter a conclusion"
               value={conclusion.text}
               onChange={(e) => handleTextChange(conclusion.id, e.target.value)}
+              onKeyDown={(e) => handleKeyDown(e, conclusion.id)}
               disabled={isSubmitting}
               className="flex-1 h-8"
               maxLength={200}
@@ -146,6 +169,17 @@ export function ConclusionForm({ onSubmit, onCancel, existingConclusion }: Concl
             )}
           </div>
         ))}
+      </div>
+
+      <div className="text-xs text-muted-foreground flex justify-between items-center px-2">
+        <span>
+          Press <kbd className="px-1 py-0.5 border rounded text-xs mx-0.5">Enter</kbd> for new line
+        </span>
+        <span>
+          Press{' '}
+          <kbd className="px-1 py-0.5 border rounded text-xs mx-0.5">{isMac ? '⌘' : 'Ctrl'}</kbd>+
+          <kbd className="px-1 py-0.5 border rounded text-xs mx-0.5">Enter</kbd> to submit
+        </span>
       </div>
 
       <Button type="button" variant="outline" className="w-full" onClick={addConclusion}>
