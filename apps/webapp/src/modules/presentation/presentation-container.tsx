@@ -182,6 +182,25 @@ function PresentationContainerInner({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if the event originated from an input field
+      const target = e.target as HTMLElement;
+      const isTextInput =
+        target instanceof HTMLTextAreaElement ||
+        (target instanceof HTMLInputElement && (!target.type || target.type === 'text')) ||
+        target.isContentEditable;
+
+      // If we're in a text input and modifier keys are pressed,
+      // let the browser handle text editing shortcuts
+      if (isTextInput && (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey)) {
+        return;
+      }
+
+      // If we're in a text input with no modifiers, don't navigate
+      if (isTextInput) {
+        return;
+      }
+
+      // Handle navigation shortcuts when not in text input
       if (e.key === 'ArrowRight' || e.key === ' ') {
         nextSlide();
       } else if (e.key === 'ArrowLeft') {
