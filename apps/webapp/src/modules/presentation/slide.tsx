@@ -23,7 +23,7 @@ export function Slide({ index, children, className }: SlideProps) {
   return (
     <div
       className={cn(
-        'flex h-full flex-col items-center justify-center p-8',
+        'flex h-full flex-col items-center justify-center p-2 lg:p-8',
         'animate-in fade-in duration-500',
         className
       )}
