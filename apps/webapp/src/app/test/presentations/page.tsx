@@ -81,7 +81,7 @@ function PresentationContent() {
   return (
     <div>
       {/* Slides */}
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
+      <div className="flex-1 flex items-center justify-center px-4 pt-12 pb-20">
         <Slide number={1} currentSlide={currentSlide} />
         <Slide number={2} currentSlide={currentSlide} />
         <Slide number={3} currentSlide={currentSlide} />
