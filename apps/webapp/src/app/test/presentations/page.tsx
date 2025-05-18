@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { Discussion } from '@/modules/discussion/discussion';
 import { PresentationContainer } from '@/modules/presentation/presentation-container';
 import { usePresentationContext } from '@/modules/presentation/presentation-container';
 import { PresentationControls } from '@/modules/presentation/presentation-controls';
@@ -32,7 +33,7 @@ function Slide({ number, currentSlide }: { number: number; currentSlide: number 
           <>
             <h2 className="text-3xl mb-4">How to Use</h2>
             <p className="mb-4">Try these features:</p>
-            <ol className="text-left list-decimal pl-6 space-y-2">
+            <ol className="text-left list-decimal pl-6 space-y-2 mb-6">
               <li>Click "Start Presenting" to become a presenter</li>
               <li>Open this page in another tab to see auto-joining as a viewer</li>
               <li>Notice that viewers cannot control navigation</li>
@@ -44,7 +45,7 @@ function Slide({ number, currentSlide }: { number: number; currentSlide: number 
           <>
             <h2 className="text-3xl mb-4">Implementation Details</h2>
             <p className="mb-4">The enhanced presenter mode includes:</p>
-            <ul className="text-left list-disc pl-6 space-y-2">
+            <ul className="text-left list-disc pl-6 space-y-2 mb-6">
               <li>Role-based permissions (presenter vs viewer)</li>
               <li>Backend state for active presentations</li>
               <li>Automatic detection and joining of active presentations</li>
@@ -59,9 +60,14 @@ function Slide({ number, currentSlide }: { number: number; currentSlide: number 
               This enhanced presenter mode creates a more natural presentation experience that works
               across multiple devices.
             </p>
-            <p>
+            <p className="mb-4">
               The presenter maintains control while viewers can effortlessly join and follow along.
             </p>
+
+            {/* Discussion component for slide 4 */}
+            <div className="mt-8 max-w-md mx-auto">
+              <Discussion title="What shall we do?" discussionKey="feedback-discussion" />
+            </div>
           </>
         )}
       </div>
