@@ -219,7 +219,7 @@ function PresentationContainerInner({
     >
       <div
         className={cn(
-          'relative min-h-screen bg-background text-foreground',
+          'grow bg-background text-foreground flex flex-col justify-center',
           isFullScreen && 'fixed inset-0 z-50',
           className
         )}

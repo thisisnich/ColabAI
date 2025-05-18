@@ -73,7 +73,7 @@ function PresentationContent() {
   const { currentSlide } = usePresentationContext();
 
   return (
-    <div className="relative w-full h-full min-h-screen flex flex-col">
+    <div>
       {/* Slides */}
       <div className="flex-1 flex items-center justify-center px-4 py-12">
         <Slide number={1} currentSlide={currentSlide} />
