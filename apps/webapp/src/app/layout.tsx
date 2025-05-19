@@ -6,7 +6,7 @@ import { Navigation } from '@/components/Navigation';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/modules/auth/AuthProvider';
 import { ThemeProvider } from '@/modules/theme/ThemeProvider';
-import Script from 'next/script';
+import type { Theme } from '@/modules/theme/theme-utils';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -39,35 +39,6 @@ export const metadata: Metadata = {
   },
 };
 
-// Minimal script for theme flash prevention
-const themeScript = `
-  (function() {
-    try {
-      // Get stored theme or use system preference
-      const storedTheme = localStorage.getItem('theme');
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      const theme = storedTheme === 'system' ? systemTheme : storedTheme || systemTheme;
-      
-      // Apply theme immediately before any rendering
-      if (theme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-      
-      // Set background color based on theme to avoid white flash
-      document.documentElement.style.backgroundColor = 
-        theme === 'dark' ? 'rgb(9, 9, 11)' : 'rgb(255, 255, 255)';
-    } catch (e) {
-      // Fallback to system preference if localStorage is not available
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        document.documentElement.classList.add('dark');
-        document.documentElement.style.backgroundColor = 'rgb(9, 9, 11)';
-      }
-    }
-  })();
-`;
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -76,9 +47,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <Script id="theme-init" strategy="beforeInteractive">
-          {themeScript}
-        </Script>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/appicon-192x192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
