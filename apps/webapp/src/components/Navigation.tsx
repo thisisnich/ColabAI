@@ -26,7 +26,7 @@ export function Navigation() {
         </div>
         <nav className="flex items-center justify-between w-full">
           <div className="flex gap-6 text-sm">{/* Navigation links removed */}</div>
-          <div>
+          <div className="flex items-center gap-2">
             {!isLoading &&
               (isAuthenticated ? (
                 <UserMenu />
