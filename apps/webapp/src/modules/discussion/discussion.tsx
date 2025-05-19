@@ -240,10 +240,10 @@ export function Discussion({ title, discussionKey, className }: DiscussionProps)
     if (!conclusion) return null;
 
     return (
-      <div className="space-y-4 h-full">
+      <div className="space-y-4">
         {/* Simplified heading */}
         <div className="flex items-center justify-center">
-          <div className="bg-muted px-3 py-1 rounded-full">
+          <div className="bg-muted px-3 py-1 rounded-full flex items-center">
             <span className="text-sm font-medium">Summary</span>
           </div>
         </div>

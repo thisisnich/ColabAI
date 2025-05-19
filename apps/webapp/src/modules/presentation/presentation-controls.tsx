@@ -17,6 +17,20 @@ import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { usePresentationContext } from './presentation-container';
 
+// Custom hook for safe client-side feature detection
+const useClientSideFeatures = () => {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  return {
+    isMounted,
+    isClient: typeof window !== 'undefined',
+  };
+};
+
 /**
  * PresentationControls Component
  *
@@ -43,88 +57,58 @@ export function PresentationControls() {
     followPresenter,
   } = usePresentationContext();
 
+  // For safe client-side feature detection
+  const { isMounted, isClient } = useClientSideFeatures();
+
   // Local state for the info dialog
   const [showSyncInfo, setShowSyncInfo] = useState(false);
   const infoButtonRef = useRef<HTMLButtonElement>(null);
-  const [dialogPosition, setDialogPosition] = useState({ top: 'auto', left: 'auto' });
-
-  /**
-   * Calculate optimal position for the info dialog
-   * Handles both desktop and mobile viewport sizes
-   */
-  const calculateDialogPosition = useCallback(() => {
-    if (!infoButtonRef.current) return { top: 'auto', left: 'auto' };
-
-    const buttonRect = infoButtonRef.current.getBoundingClientRect();
-    const dialogWidth = 320; // w-80 = 20rem = 320px
-    const dialogHeight = 400; // Approximate height of the dialog
-
-    // Calculate initial position (centered above the button)
-    let top = buttonRect.top - dialogHeight - 10;
-    let left = buttonRect.left - dialogWidth / 2 + buttonRect.width / 2;
-
-    // Check if we're on a small screen (likely mobile)
-    const isMobile = window.innerWidth < 640;
-
-    // Adjust for small screens
-    if (isMobile) {
-      // Center horizontally on mobile
-      left = Math.max(20, Math.min(left, window.innerWidth - dialogWidth - 20));
-
-      // If there's not enough space above, position below
-      if (top < 20) {
-        top = buttonRect.bottom + 10;
-      }
-
-      // If still not enough space, position at top of screen
-      if (top + dialogHeight > window.innerHeight - 20) {
-        top = 20;
-      }
-    } else {
-      // Desktop adjustments
-      // Ensure dialog stays within viewport bounds
-      top = Math.max(20, Math.min(top, window.innerHeight - dialogHeight - 20));
-      left = Math.max(20, Math.min(left, window.innerWidth - dialogWidth - 20));
-    }
-
-    return { top: `${top}px`, left: `${left}px` };
-  }, []);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  // Using classNames for responsive positioning instead of explicit coordinates
+  const [dialogPosition, setDialogPosition] = useState<'center' | 'default'>('default');
 
   // Close the info dialog
   const handleCloseModal = useCallback(() => {
     setShowSyncInfo(false);
   }, []);
 
-  // Calculate position when the info dialog is shown
+  // Position dialog when shown
   useEffect(() => {
-    if (showSyncInfo) {
-      setDialogPosition(calculateDialogPosition());
-    }
-  }, [showSyncInfo, calculateDialogPosition]);
+    if (!showSyncInfo || !isMounted) return;
 
-  // Recalculate dialog position on window resize
-  useEffect(() => {
-    if (!showSyncInfo) return;
-
-    const handleResize = () => {
-      setDialogPosition(calculateDialogPosition());
+    // Check if we need to use center positioning (for small screens)
+    const updateDialogPosition = () => {
+      // Use CSS breakpoint equivalent check - sm is typically 640px
+      if (isClient && window.innerWidth < 640) {
+        setDialogPosition('center');
+      } else {
+        setDialogPosition('default');
+      }
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [showSyncInfo, calculateDialogPosition]);
+    // Initial position calculation
+    updateDialogPosition();
+
+    // Update on resize
+    if (isClient) {
+      window.addEventListener('resize', updateDialogPosition);
+      return () => window.removeEventListener('resize', updateDialogPosition);
+    }
+  }, [showSyncInfo, isMounted, isClient]);
 
   // Handle Escape key to close the info dialog
   useEffect(() => {
+    if (!isClient || !showSyncInfo) return;
+
     const handleEscapeKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showSyncInfo) {
+      if (e.key === 'Escape') {
         handleCloseModal();
       }
     };
 
     window.addEventListener('keydown', handleEscapeKey);
     return () => window.removeEventListener('keydown', handleEscapeKey);
-  }, [showSyncInfo, handleCloseModal]);
+  }, [showSyncInfo, handleCloseModal, isClient]);
 
   // Handle key down events within the dialog
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -138,6 +122,8 @@ export function PresentationControls() {
    * Includes the current slide position in the URL
    */
   const copyShareableLink = useCallback(() => {
+    if (!isClient) return;
+
     // Create URL with current slide
     const url = new URL(window.location.href);
     url.searchParams.set('slide', currentSlide.toString());
@@ -157,7 +143,7 @@ export function PresentationControls() {
         });
         console.error('Failed to copy URL:', error);
       });
-  }, [currentSlide]);
+  }, [currentSlide, isClient]);
 
   /**
    * Handle sync button click based on current state
@@ -275,11 +261,16 @@ export function PresentationControls() {
 
         {/* Additional Controls (Fullscreen, Sync, Info) */}
         <div className="flex items-center gap-2">
-          {/* Fullscreen Toggle */}
+          {/* Fullscreen Toggle - Hidden on mobile with CSS */}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={toggleFullScreen} className="h-8 w-8">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleFullScreen}
+                  className="hidden sm:flex h-8 w-8"
+                >
                   {isFullScreen ? (
                     <Minimize2 className="h-4 w-4" />
                   ) : (
@@ -335,7 +326,7 @@ export function PresentationControls() {
       </div>
 
       {/* Info Dialog - Shown when info button is clicked */}
-      {showSyncInfo && (
+      {showSyncInfo && isMounted && (
         <div
           className="fixed inset-0 z-50 bg-black/30"
           onClick={handleCloseModal}
@@ -343,13 +334,23 @@ export function PresentationControls() {
           aria-hidden="true"
         >
           <dialog
+            ref={dialogRef}
             open
-            className="absolute z-50 bg-card shadow-lg rounded-lg p-4 w-80"
+            className={cn(
+              'bg-card shadow-lg rounded-lg p-4 w-80 max-w-[calc(100vw-40px)]',
+              // Apply different classes based on screen size
+              dialogPosition === 'center'
+                ? 'fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' // Centered on mobile
+                : 'absolute z-50 max-h-[80vh] overflow-y-auto' // Default positioning near button on desktop
+            )}
             style={{
-              top: dialogPosition.top,
-              left: dialogPosition.left,
               margin: 0,
-              maxWidth: 'calc(100vw - 40px)',
+              // Only apply specific positioning for desktop mode
+              ...(dialogPosition === 'default' &&
+                infoButtonRef.current && {
+                  top: `${Math.max(20, infoButtonRef.current.getBoundingClientRect().top - 430)}px`,
+                  left: `${Math.max(20, infoButtonRef.current.getBoundingClientRect().left - 160)}px`,
+                }),
             }}
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
