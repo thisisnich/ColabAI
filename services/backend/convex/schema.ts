@@ -94,6 +94,7 @@ export default defineSchema({
     chatId: v.id('chats'), // Reference to the chat
     userId: v.id('users'), // Reference to the user
     joinedAt: v.number(), // When the user joined the chat
+    role: v.optional(v.string()), // Optional role of the user in the chat (e.g., "admin", "creator", etc.)
   })
     .index('by_chat_user', ['chatId', 'userId']) // For checking if a user is in a chat
     .index('by_user_chat', ['userId', 'chatId']) // For finding all chats a user is in
