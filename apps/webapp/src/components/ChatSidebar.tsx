@@ -1,7 +1,7 @@
 import { api } from '@workspace/backend/convex/_generated/api';
 import type { Id } from '@workspace/backend/convex/_generated/dataModel';
 import { useSessionMutation, useSessionQuery } from 'convex-helpers/react/sessions';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ChatJoin } from './ChatJoin';
 import { Button } from './ui/button';
@@ -33,23 +33,6 @@ export function ChatSidebar({ onChatSelect, selectedChatId, className }: ChatSid
 
   // Get all chats the user is a member of
   const chats = useSessionQuery(api.chat.listChats);
-  console.log('Chats:', chats);
-
-  // Debug: Log chats when they change
-  useEffect(() => {
-    console.log('Chats data:', chats);
-    if (chats) {
-      console.log('Number of chats:', chats.length);
-      chats.forEach((chat, index) => {
-        console.log(`Chat ${index + 1}:`, {
-          id: chat.id,
-          name: chat.name,
-          members: chat.members,
-          latestMessage: chat.latestMessage,
-        });
-      });
-    }
-  }, [chats]);
 
   // Mutations
   const createChat = useSessionMutation(api.chat.createChat);
@@ -75,6 +58,7 @@ export function ChatSidebar({ onChatSelect, selectedChatId, className }: ChatSid
       setIsCreating(false);
     }
   };
+
   const openDeleteDialog = (chatId: Id<'chats'>, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent selecting the chat
     console.log('Opening delete dialog for chat ID:', chatId);
@@ -105,7 +89,7 @@ export function ChatSidebar({ onChatSelect, selectedChatId, className }: ChatSid
   };
 
   return (
-    <div className={`flex flex-col h-full ${className}`}>
+    <div className={`flex flex-col h-full bg-background ${className}`}>
       <div className="flex items-center justify-between p-3 border-b">
         <h2 className="font-semibold text-lg">Chats</h2>
         <div className="flex gap-1">
@@ -181,7 +165,7 @@ export function ChatSidebar({ onChatSelect, selectedChatId, className }: ChatSid
 
       {/* Create new chat dialog */}
       <Dialog open={newChatDialogOpen} onOpenChange={setNewChatDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Create New Chat</DialogTitle>
             <DialogDescription>Give your chat a name. You can add members later.</DialogDescription>
@@ -209,7 +193,7 @@ export function ChatSidebar({ onChatSelect, selectedChatId, className }: ChatSid
 
       {/* Delete chat confirmation dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Delete Chat</DialogTitle>
             <DialogDescription>

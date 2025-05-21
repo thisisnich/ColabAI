@@ -91,7 +91,7 @@ export function UserMenu() {
             <DropdownMenuItem className="cursor-pointer">Profile</DropdownMenuItem>
           </Link>
           <DropdownMenuSeparator />
-          <Link href="/app/chat">
+          <Link href="/app">
             <DropdownMenuItem className="cursor-pointer">Chat</DropdownMenuItem>
           </Link>
           <DropdownMenuItem

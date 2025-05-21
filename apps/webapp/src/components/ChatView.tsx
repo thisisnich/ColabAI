@@ -2,7 +2,7 @@ import { api } from '@workspace/backend/convex/_generated/api';
 import type { Id } from '@workspace/backend/convex/_generated/dataModel';
 import { useSessionMutation, useSessionQuery } from 'convex-helpers/react/sessions';
 import { Settings } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChatInvite } from './ChatInvite';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -10,20 +10,24 @@ import { Skeleton } from './ui/skeleton';
 
 interface ChatViewProps {
   chatId: Id<'chats'>;
+  onToggleSidebar: () => void;
+  sidebarOpen: boolean;
+  isMobile: boolean;
 }
 
 // Create a new ChatSettings component
 function ChatSettings({ chatId }: { chatId: Id<'chats'> }) {
   return (
-    <Button variant="ghost" size="icon">
+    <Button variant="ghost" size="icon" className="h-8 w-8">
       <Settings className="h-4 w-4" />
       <span className="sr-only">Chat Settings</span>
     </Button>
   );
 }
 
-export function ChatView({ chatId }: ChatViewProps) {
+export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: ChatViewProps) {
   const [message, setMessage] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Get chat details and messages
   const chatResult = useSessionQuery(api.chat.getChatDetails, { chatId });
@@ -52,6 +56,13 @@ export function ChatView({ chatId }: ChatViewProps) {
     }
   };
 
+  // Scroll to bottom of messages when new messages arrive
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+
   if (!chatDetails) {
     return (
       <div className="p-4">
@@ -64,12 +75,25 @@ export function ChatView({ chatId }: ChatViewProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Chat header */}
-      <div className="border-b p-3 flex justify-between items-center">
-        <div>
-          <h2 className="font-semibold text-lg">{chatDetails.name}</h2>
-          <p className="text-sm text-muted-foreground">{chatDetails.memberCount} members</p>
+      <div className="border-b p-3 flex justify-between items-center relative">
+        {/* Left section - visible on desktop, hidden on mobile except for the menu button */}
+        <div className={`${isMobile ? 'invisible' : 'visible'} flex items-center flex-1`}>
+          <div>
+            <h2 className="font-semibold text-lg">{chatDetails.name}</h2>
+            <p className="text-sm text-muted-foreground">{chatDetails.memberCount} members</p>
+          </div>
         </div>
-        <div className="flex gap-2">
+
+        {/* Center title - only visible on mobile */}
+        {isMobile && (
+          <div className="absolute left-0 right-0 mx-auto w-fit text-center">
+            <h2 className="font-semibold text-lg">{chatDetails.name}</h2>
+            <p className="text-sm text-muted-foreground">{chatDetails.memberCount} members</p>
+          </div>
+        )}
+
+        {/* Right section - always visible */}
+        <div className="flex gap-2 z-10">
           {/* Chat Invite Component */}
           <ChatInvite chatId={chatId} />
 
@@ -122,6 +146,7 @@ export function ChatView({ chatId }: ChatViewProps) {
                 </div>
               );
             })}
+            <div ref={messagesEndRef} />
           </div>
         )}
       </div>
