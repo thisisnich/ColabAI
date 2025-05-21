@@ -93,33 +93,36 @@ export function ChatView({ chatId }: ChatViewProps) {
             </p>
           </div>
         ) : (
-          messages.map((msg) => {
-            // Determine message type
-            const isSystemMessage = msg.type === 'system';
-            const isSelfMessage = isSystemMessage ? false : msg.sender.id === currentUserId;
+          <div className="flex flex-col space-y-4">
+            {messages.map((msg) => {
+              // Determine message type
+              const isSystemMessage = msg.type === 'system';
+              const isSelfMessage = isSystemMessage ? false : msg.sender.id === currentUserId;
 
-            return (
-              <div
-                key={msg.id}
-                className={`rounded-lg p-3 max-w-[85%] ${
-                  isSystemMessage
-                    ? 'bg-muted text-center text-xs text-muted-foreground mx-auto w-full'
-                    : isSelfMessage
-                      ? 'bg-blue-500 text-white ml-auto'
-                      : 'bg-gray-200 text-gray-800 mr-auto'
-                }`}
-              >
-                {!isSystemMessage && (
-                  <p
-                    className={`font-medium text-sm mb-1 ${isSelfMessage ? 'text-blue-100' : 'text-gray-600'}`}
+              return (
+                <div key={msg.id} className="flex w-full">
+                  <div
+                    className={`rounded-lg p-3 inline-block min-w-[180px] max-w-[85%] ${
+                      isSystemMessage
+                        ? 'bg-muted text-center text-xs text-muted-foreground mx-auto'
+                        : isSelfMessage
+                          ? 'bg-blue-500 text-white ml-auto'
+                          : 'bg-gray-200 text-gray-800 mr-auto'
+                    }`}
                   >
-                    {isSelfMessage ? 'Me' : msg.sender.name}
-                  </p>
-                )}
-                <p>{msg.content}</p>
-              </div>
-            );
-          })
+                    {!isSystemMessage && (
+                      <p
+                        className={`font-medium text-sm mb-1 ${isSelfMessage ? 'text-blue-100' : 'text-gray-600'}`}
+                      >
+                        {isSelfMessage ? 'Me' : msg.sender.name}
+                      </p>
+                    )}
+                    <p className="break-words">{msg.content}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
 
