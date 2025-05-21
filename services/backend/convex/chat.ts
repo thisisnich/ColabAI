@@ -43,6 +43,7 @@ export const createChat = mutation({
       chatId,
       userId: currentUserId,
       joinedAt: now,
+      role: 'admin', // Optional: Set the role of the creator
     });
 
     return { chatId };

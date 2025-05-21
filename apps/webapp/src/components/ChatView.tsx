@@ -4,6 +4,7 @@ import { useSessionMutation, useSessionQuery } from 'convex-helpers/react/sessio
 import { Settings } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { ChatInvite } from './ChatInvite';
+import { ChatSettings } from './ChatSettings';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Skeleton } from './ui/skeleton';
@@ -16,14 +17,14 @@ interface ChatViewProps {
 }
 
 // Create a new ChatSettings component
-function ChatSettings({ chatId }: { chatId: Id<'chats'> }) {
-  return (
-    <Button variant="ghost" size="icon" className="h-8 w-8">
-      <Settings className="h-4 w-4" />
-      <span className="sr-only">Chat Settings</span>
-    </Button>
-  );
-}
+// function ChatSettings({ chatId }: { chatId: Id<'chats'> }) {
+//   return (
+//     <Button variant="ghost" size="icon" className="h-8 w-8">
+//       <Settings className="h-4 w-4" />
+//       <span className="sr-only">Chat Settings</span>
+//     </Button>
+//   );
+// }
 
 export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: ChatViewProps) {
   const [message, setMessage] = useState('');
