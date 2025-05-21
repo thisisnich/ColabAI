@@ -66,7 +66,7 @@ export function ChatLayout() {
             variant="ghost"
             size="icon"
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="absolute top-3 left-3 z-20"
+            className={`absolute top-3 z-20 ${sidebarOpen ? 'right-3' : 'left-3'}`}
           >
             <Menu className="h-5 w-5" />
           </Button>

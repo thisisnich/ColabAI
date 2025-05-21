@@ -91,7 +91,7 @@ export function ChatSidebar({ onChatSelect, selectedChatId, className }: ChatSid
   return (
     <div className={`flex flex-col h-full bg-background ${className}`}>
       <div className="flex items-center justify-between p-3 border-b">
-        <h2 className="font-semibold text-lg">Chats</h2>
+        <h2 className="font-semibold text-lg w-fit">Chats</h2>
         <div className="flex gap-1">
           <ChatJoin />
           <Button
@@ -105,7 +105,6 @@ export function ChatSidebar({ onChatSelect, selectedChatId, className }: ChatSid
           </Button>
         </div>
       </div>
-
       <div className="flex-1 overflow-y-auto p-2 space-y-2">
         {chats === undefined ? (
           // Loading state
