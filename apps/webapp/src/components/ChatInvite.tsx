@@ -84,10 +84,16 @@ export function ChatInvite({ chatId }: ChatInviteProps) {
     try {
       const result = await createChatJoinCode({ chatId });
       if (result.success) {
-        setJoinCode(result.code);
-        setExpiresAt(result.expiresAt);
-        setTimeRemaining(getTimeRemaining());
-        toast.success('Join code generated successfully');
+        // Fix: Only set state if values are defined
+        if (result.code !== undefined && result.expiresAt !== undefined) {
+          setJoinCode(result.code);
+          setExpiresAt(result.expiresAt);
+          setTimeRemaining(getTimeRemaining());
+          toast.success('Join code generated successfully');
+        } else {
+          // Handle unexpected response format
+          toast.error('Invalid response from server');
+        }
       } else {
         toast.error(result.message || 'Failed to generate join code');
       }
