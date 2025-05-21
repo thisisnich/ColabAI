@@ -90,10 +90,10 @@ export function UserMenu() {
           <Link href="/app/profile">
             <DropdownMenuItem className="cursor-pointer">Profile</DropdownMenuItem>
           </Link>
-          <Link href="/app">
-            <DropdownMenuItem className="cursor-pointer">Dashboard</DropdownMenuItem>
-          </Link>
           <DropdownMenuSeparator />
+          <Link href="/app/chat">
+            <DropdownMenuItem className="cursor-pointer">Chat</DropdownMenuItem>
+          </Link>
           <DropdownMenuItem
             className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
             onClick={() => setShowLogoutConfirm(true)}

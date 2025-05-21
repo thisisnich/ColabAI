@@ -15,9 +15,11 @@ import type {
 } from "convex/server";
 import type * as appinfo from "../appinfo.js";
 import type * as auth from "../auth.js";
+import type * as chat from "../chat.js";
 import type * as cleanupTasks from "../cleanupTasks.js";
 import type * as crypto from "../crypto.js";
 import type * as discussions from "../discussions.js";
+import type * as invite from "../invite.js";
 import type * as migration from "../migration.js";
 import type * as presentations from "../presentations.js";
 import type * as serviceDesk from "../serviceDesk.js";
@@ -33,9 +35,11 @@ import type * as serviceDesk from "../serviceDesk.js";
 declare const fullApi: ApiFromModules<{
   appinfo: typeof appinfo;
   auth: typeof auth;
+  chat: typeof chat;
   cleanupTasks: typeof cleanupTasks;
   crypto: typeof crypto;
   discussions: typeof discussions;
+  invite: typeof invite;
   migration: typeof migration;
   presentations: typeof presentations;
   serviceDesk: typeof serviceDesk;

@@ -81,4 +81,40 @@ export default defineSchema({
     createdAt: v.number(), // When the code was created
     expiresAt: v.number(), // When the code expires (1 minute after creation)
   }).index('by_code', ['code']),
+
+  // Chats tables
+  chats: defineTable({
+    name: v.string(), // The name of the chat
+    createdAt: v.number(), // When the chat was created
+    createdBy: v.id('users'), // User who created the chat
+    updatedAt: v.number(), // Time of last activity in the chat
+  }).index('by_updated', ['updatedAt']), // Index to sort chats by recent activity
+
+  chatMemberships: defineTable({
+    chatId: v.id('chats'), // Reference to the chat
+    userId: v.id('users'), // Reference to the user
+    joinedAt: v.number(), // When the user joined the chat
+  })
+    .index('by_chat_user', ['chatId', 'userId']) // For checking if a user is in a chat
+    .index('by_user_chat', ['userId', 'chatId']) // For finding all chats a user is in
+    .index('by_chat', ['chatId']), // For finding all members of a chat
+
+  messages: defineTable({
+    chatId: v.id('chats'), // Reference to the chat this message belongs to
+    userId: v.id('users'), // User who sent the message
+    content: v.string(), // The message content
+    timestamp: v.number(), // When the message was sent
+    type: v.optional(v.string()), // Optional type of message (e.g., "system" for system messages)
+  })
+    .index('by_chat_time', ['chatId', 'timestamp']) // For querying messages in a chat ordered by time
+    .index('by_chat', ['chatId']), // For simple membership queries
+
+  // Chat join codes table (Added for invite functionality)
+  chatJoinCodes: defineTable({
+    code: v.string(), // The join code
+    chatId: v.id('chats'), // The chat this code is for
+    createdByUserId: v.id('users'), // User who created this code
+    createdAt: v.number(), // When the code was created
+    expiresAt: v.number(), // When the code expires
+  }).index('by_code', ['code']), // For looking up codes
 });
