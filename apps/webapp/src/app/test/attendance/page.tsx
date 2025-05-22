@@ -1,6 +1,5 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AttendanceModule } from '@/modules/attendance/components/AttendanceModule';
 
 export default function AttendanceTestPage() {

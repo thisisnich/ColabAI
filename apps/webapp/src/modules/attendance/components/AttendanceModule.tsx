@@ -2,15 +2,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuthState, useCurrentUser } from '@/modules/auth/AuthProvider';
+import { useCurrentUser } from '@/modules/auth/AuthProvider';
 import { api } from '@workspace/backend/convex/_generated/api';
 import type { Doc } from '@workspace/backend/convex/_generated/dataModel';
-import { useSessionMutation, useSessionQuery } from 'convex-helpers/react/sessions';
-import { useMutation, useQuery } from 'convex/react';
+import { useSessionQuery } from 'convex-helpers/react/sessions';
 import { CheckCircle2, Plus, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import type { AttendanceStatus } from '../types';
 import { AttendanceDialog } from './AttendanceDialog';
 
 interface AttendanceModuleProps {
