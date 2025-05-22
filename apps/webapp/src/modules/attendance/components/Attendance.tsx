@@ -27,6 +27,7 @@ export const Attendance = ({
   const [expanded, setExpanded] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const attendanceData = useSessionQuery(api.attendance.getAttendanceData, {
     attendanceKey,
@@ -94,6 +95,11 @@ export const Attendance = ({
     }
   }
 
+  // Convert set to array and filter by search query
+  const filteredNames = Array.from(allNames).filter((name) =>
+    name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const attendingCount = attendanceRecords.filter((r) => r.status === 'attending').length;
   const notAttendingCount = attendanceRecords.filter((r) => r.status === 'not_attending').length;
 
@@ -136,11 +142,23 @@ export const Attendance = ({
                 </Button>
               )}
 
-              {allNames.size === 0 ? (
-                <div className="text-center text-muted-foreground py-4">No attendees yet</div>
+              <div className="mb-4">
+                <input
+                  type="text"
+                  placeholder="Search names..."
+                  className="w-full px-3 py-2 border rounded-md"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              {filteredNames.length === 0 ? (
+                <div className="text-center text-muted-foreground py-4">
+                  No matching attendees found
+                </div>
               ) : (
                 <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {Array.from(allNames).map((name) => {
+                  {filteredNames.map((name) => {
                     const record = attendanceMap.get(name);
                     const status = record?.status;
                     const reason = record?.reason;
