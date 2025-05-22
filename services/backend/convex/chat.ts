@@ -2,9 +2,10 @@ import { SessionIdArg } from 'convex-helpers/server/sessions';
 import { v } from 'convex/values';
 import { ConvexError } from 'convex/values';
 import { getAuthUser } from '../modules/auth/getAuthUser';
+import { api, internal } from './_generated/api';
 import type { Doc, Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
-
+import { internalMutation, internalQuery } from './_generated/server';
 // MUTATIONS //
 
 /**
@@ -217,10 +218,103 @@ export const sendMessage = mutation({
       content: args.content,
       timestamp: now,
     });
+    if (args.content.startsWith('/')) {
+      // If the message starts with a slash, treat it as a command
+      const fullCommand = args.content.slice(1).trim(); // "wiki beans"
+      const parts = fullCommand.split(' ');
+      const command = parts[0]; // "wiki"
+      const commandArgs = parts.slice(1).join(' '); // "beans"
 
+      console.log('Command:', command);
+      console.log('Command args:', commandArgs);
+
+      if (command === 'wiki') {
+        if (!commandArgs) {
+          // Handle case where no topic is provided
+          await ctx.db.insert('messages', {
+            chatId: args.chatId,
+            userId: user._id,
+            content: 'Please provide a topic. Usage: /wiki [topic]',
+            timestamp: Date.now(),
+            type: 'system',
+          });
+          return messageId;
+        }
+
+        await ctx.scheduler.runAfter(0, internal.commands.getWikipediaSummary, {
+          topic: commandArgs,
+          chatId: args.chatId,
+          userId: user._id,
+        });
+      } else {
+        // Handle other commands as needed
+      }
+    }
     return messageId;
   },
 });
+export const verifyMembership = internalQuery({
+  args: {
+    chatId: v.id('chats'),
+
+    userId: v.id('users'),
+  },
+
+  handler: async (ctx, args) => {
+    return await ctx.db
+
+      .query('chatMemberships')
+
+      .withIndex('by_chat_user', (q) =>
+        q
+          .eq('chatId', args.chatId)
+
+          .eq('userId', args.userId)
+      )
+
+      .unique();
+  },
+});
+
+export const sendSystemMessage = internalMutation({
+  args: {
+    chatId: v.id('chats'),
+
+    content: v.string(),
+  },
+
+  handler: async (ctx, args) => {
+    // Get or create system user (you might want to cache this ID)
+
+    const systemUser = await ctx.db
+
+      .query('users')
+
+      .withIndex('by_username', (q) => q.eq('username', 'system'))
+
+      .unique();
+
+    if (!systemUser) {
+      throw new Error('System user not configured');
+    }
+
+    await ctx.db.insert('messages', {
+      chatId: args.chatId,
+
+      userId: systemUser._id, // Now using proper Id<"users">
+
+      content: args.content,
+
+      timestamp: Date.now(),
+
+      type: 'system',
+    });
+
+    await ctx.db.patch(args.chatId, {
+      updatedAt: Date.now(),
+    });
+  },
+}); /**
 
 /**
  * Add a user to a chat
