@@ -125,6 +125,12 @@ export const Attendance = ({
     setSelectedPerson('');
   };
 
+  // Handle successful attendance submission
+  const handleAttendanceSuccess = useCallback(() => {
+    // Switch to responded tab after successful attendance submission
+    handleTabChange('responded');
+  }, [handleTabChange]);
+
   // Check if a record belongs to the current user by comparing user IDs
   const isCurrentUser = (name: string) => {
     const record = attendanceMap.get(name);
@@ -479,6 +485,7 @@ export const Attendance = ({
           personName={selectedPerson}
           attendanceKey={attendanceKey}
           attendanceRecords={attendanceRecords}
+          onSuccess={handleAttendanceSuccess}
         />
       )}
     </>

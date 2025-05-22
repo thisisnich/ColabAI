@@ -32,6 +32,7 @@ interface AttendanceDialogProps {
   personName: string;
   attendanceKey?: string;
   attendanceRecords: Doc<'attendanceRecords'>[];
+  onSuccess?: () => void;
 }
 
 export function AttendanceDialog({
@@ -40,6 +41,7 @@ export function AttendanceDialog({
   personName,
   attendanceKey,
   attendanceRecords,
+  onSuccess,
 }: AttendanceDialogProps) {
   const currentUser = useCurrentUser();
   const isAuthenticated = currentUser !== undefined;
@@ -111,6 +113,11 @@ export function AttendanceDialog({
         toast.success(`Attendance recorded for ${personName}`);
       }
 
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
+
       onClose();
     } catch (error) {
       console.error('Failed to record attendance:', error);
@@ -122,6 +129,7 @@ export function AttendanceDialog({
     attendanceKey,
     isAuthenticated,
     onClose,
+    onSuccess,
     personName,
     reason,
     recordAttendance,
