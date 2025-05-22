@@ -1,6 +1,6 @@
 'use client';
 
-import { AttendanceModule } from '@/modules/attendance/components/AttendanceModule';
+import { Attendance } from '@/modules/attendance/components/Attendance';
 
 export default function AttendanceTestPage() {
   // Hardcoded attendee names
@@ -10,7 +10,7 @@ export default function AttendanceTestPage() {
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-6">Attendance Test Page</h1>
 
-      <AttendanceModule
+      <Attendance
         attendanceKey="weekly-team-meeting"
         title="Weekly Team Meeting"
         expectedNames={attendeeNames}

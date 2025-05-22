@@ -17,7 +17,7 @@ interface AttendanceModuleProps {
   expectedNames?: string[];
 }
 
-export const AttendanceModule = ({
+export const Attendance = ({
   attendanceKey,
   title = 'Attendance',
   expectedNames = [],
