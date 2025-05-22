@@ -10,7 +10,8 @@ import { api } from '@workspace/backend/convex/_generated/api';
 import type { Doc } from '@workspace/backend/convex/_generated/dataModel';
 import { useSessionQuery } from 'convex-helpers/react/sessions';
 import { CheckCircle2, ChevronDown, Plus, XCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { AttendanceDialog } from './AttendanceDialog';
 
@@ -25,6 +26,8 @@ export const Attendance = ({
   title = 'Attendance',
   expectedNames = [],
 }: AttendanceModuleProps) => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const currentUser = useCurrentUser();
   const isAuthenticated = currentUser !== undefined;
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -32,25 +35,51 @@ export const Attendance = ({
   const [selectedPerson, setSelectedPerson] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showFullListModal, setShowFullListModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'pending' | 'responded'>('responded');
-
   const attendanceData = useSessionQuery(api.attendance.getAttendanceData, {
     attendanceKey,
   });
 
+  // Get attendance tab from URL or default
+  const attendanceTabFromUrl = searchParams.get('attendanceTab');
+
+  const [activeTab, setActiveTab] = useState<'pending' | 'responded'>(() => {
+    if (attendanceTabFromUrl === 'pending' || attendanceTabFromUrl === 'responded') {
+      return attendanceTabFromUrl;
+    }
+    // Fallback to default based on data only if no tab in URL
+    if (attendanceData !== undefined && !currentUserResponse) {
+      return 'pending';
+    }
+    return 'responded';
+  });
+
+  // Update URL when tab changes
+  const handleTabChange = useCallback(
+    (tab: 'pending' | 'responded') => {
+      setActiveTab(tab);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('attendanceTab', tab);
+      // Keep the main tab parameter if it exists
+      router.push(`?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams]
+  );
+
   const attendanceRecords = attendanceData?.records || [];
   const currentUserResponse = attendanceData?.currentUserResponse;
 
-  // Effect to set default tab based on currentUserResponse
+  // Effect to update active tab based on URL changes (if not triggered by internal click)
   useEffect(() => {
-    if (attendanceData !== undefined) {
-      if (!currentUserResponse) {
-        setActiveTab('pending');
-      } else {
-        setActiveTab('responded');
-      }
+    const tabFromUrl = searchParams.get('attendanceTab');
+    if (tabFromUrl === 'pending' || tabFromUrl === 'responded') {
+      setActiveTab(tabFromUrl);
+    } else if (attendanceData !== undefined && !currentUserResponse) {
+      // Set to pending only if no tab in URL and user hasn't responded
+      setActiveTab('pending');
+    } else {
+      setActiveTab('responded');
     }
-  }, [attendanceData, currentUserResponse]);
+  }, [searchParams, attendanceData, currentUserResponse]); // Depend on searchParams to react to URL changes
 
   // Check if the current user is already in the attendance list
   const isCurrentUserRegistered = Boolean(currentUserResponse);
@@ -186,7 +215,7 @@ export const Attendance = ({
             <Tabs
               defaultValue="responded"
               value={activeTab}
-              onValueChange={(value) => setActiveTab(value as 'pending' | 'responded')}
+              onValueChange={(value) => handleTabChange(value as 'pending' | 'responded')}
             >
               <TabsList className="w-full mb-4">
                 <TabsTrigger value="responded" className="flex-1">
