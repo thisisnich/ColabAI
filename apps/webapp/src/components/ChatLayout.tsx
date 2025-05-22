@@ -42,14 +42,14 @@ export function ChatLayout() {
   };
 
   return (
-    <div className="flex h-screen bg-background relative">
+    <div className="flex h-screen bg-background relative overflow-hidden">
       {/* Sidebar - only collapsible on mobile */}
       <div
         className={`${
           isMobile && !sidebarOpen ? '-translate-x-full' : 'translate-x-0'
         } transition-transform duration-300 ${
           isMobile ? 'absolute' : 'relative'
-        } z-10 h-full w-80 flex-shrink-0`}
+        } h-full w-80 flex-shrink-0 z-30`}
       >
         <ChatSidebar
           onChatSelect={handleChatSelect}
@@ -59,28 +59,30 @@ export function ChatLayout() {
       </div>
 
       {/* Main content area */}
-      <div className="flex-1 flex flex-col relative">
+      <div className="flex-1 flex flex-col relative min-h-0">
         {/* Toggle button for sidebar - only on mobile */}
         {isMobile && (
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className={`absolute top-3 z-20 ${sidebarOpen ? 'right-3' : 'left-3'}`}
+            className={`absolute top-3 z-40 ${sidebarOpen ? 'right-3' : 'left-3'}`}
           >
             <Menu className="h-5 w-5" />
           </Button>
         )}
 
         {selectedChatId ? (
-          <ChatView
-            chatId={selectedChatId}
-            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-            sidebarOpen={sidebarOpen}
-            isMobile={isMobile}
-          />
+          <div className="flex-1 min-h-0">
+            <ChatView
+              chatId={selectedChatId}
+              onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+              sidebarOpen={sidebarOpen}
+              isMobile={isMobile}
+            />
+          </div>
         ) : (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <h2 className="text-2xl font-semibold mb-2">Select a chat</h2>
               <p className="text-muted-foreground">

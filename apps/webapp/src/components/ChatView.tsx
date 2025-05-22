@@ -1,10 +1,10 @@
 import { api } from '@workspace/backend/convex/_generated/api';
 import type { Id } from '@workspace/backend/convex/_generated/dataModel';
 import { useSessionMutation, useSessionQuery } from 'convex-helpers/react/sessions';
-import { Settings } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { ChatInvite } from './ChatInvite';
 import { ChatSettings } from './ChatSettings';
+import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Skeleton } from './ui/skeleton';
@@ -16,15 +16,33 @@ interface ChatViewProps {
   isMobile: boolean;
 }
 
-// Create a new ChatSettings component
-// function ChatSettings({ chatId }: { chatId: Id<'chats'> }) {
-//   return (
-//     <Button variant="ghost" size="icon" className="h-8 w-8">
-//       <Settings className="h-4 w-4" />
-//       <span className="sr-only">Chat Settings</span>
-//     </Button>
-//   );
-// }
+function getRoleBadgeVariant(role: string, isCreator: boolean) {
+  if (isCreator) return 'default';
+  switch (role) {
+    case 'admin':
+      return 'destructive';
+    case 'contributor':
+      return 'secondary';
+    case 'viewer':
+      return 'outline';
+    default:
+      return 'secondary';
+  }
+}
+
+function getRoleDisplayName(role: string, isCreator: boolean) {
+  if (isCreator) return 'Creator';
+  switch (role) {
+    case 'admin':
+      return 'Admin';
+    case 'contributor':
+      return 'Contributor';
+    case 'viewer':
+      return 'Viewer';
+    default:
+      return 'Member';
+  }
+}
 
 export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: ChatViewProps) {
   const [message, setMessage] = useState('');
@@ -34,7 +52,55 @@ export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: Cha
   const chatResult = useSessionQuery(api.chat.getChatDetails, { chatId });
   const messagesResult = useSessionQuery(api.chat.listMessages, { chatId });
 
-  // Extract the chat details and messages
+  // Get current user's role and permissions
+  const currentUserRole = useSessionQuery(api.settings.getCurrentUserRole, { chatId });
+
+  // Get all member roles for this chat
+  const memberRoles = useSessionQuery(api.settings.getChatMemberRoles, { chatId });
+
+  // Check for forbidden access - assuming the queries return null/undefined for forbidden access
+  // You may need to adjust this based on your actual API response structure
+  const isForbidden = chatResult === null || messagesResult === null || currentUserRole === null;
+
+  if (isForbidden) {
+    return (
+      <div className="flex flex-col h-full">
+        {/* Header with basic info */}
+        <div className="border-b p-3 flex justify-between items-center">
+          <div className="flex items-center flex-1">
+            <div>
+              <h2 className="font-semibold text-lg">Chat Access Denied</h2>
+            </div>
+          </div>
+        </div>
+
+        {/* Access denied content */}
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="text-center space-y-4 max-w-md">
+            <div className="text-6xl">🚫</div>
+            <h3 className="text-xl font-semibold text-muted-foreground">No Access to This Chat</h3>
+            <p className="text-muted-foreground">
+              You no longer have access to this chat. You may have left the chat or been removed by
+              an administrator.
+            </p>
+            <div className="pt-4">
+              <Button variant="outline" onClick={() => window.history.back()} className="mr-2">
+                Go Back
+              </Button>
+              <Button
+                // biome-ignore lint/suspicious/noAssignInExpressions: <explanation>
+                onClick={() => (window.location.href = '/')}
+              >
+                Go to Home
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Extract the chat details and messages directly from the results
   const chatDetails = chatResult;
   const messages = messagesResult?.messages || [];
   const currentUserId = messagesResult?.currentUserId;
@@ -42,9 +108,12 @@ export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: Cha
   // Send message mutation
   const sendMessage = useSessionMutation(api.chat.sendMessage);
 
+  // Check if current user can send messages (not a viewer)
+  const canSendMessages = currentUserRole?.canSendMessages ?? false;
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim() || !canSendMessages) return;
 
     try {
       await sendMessage({
@@ -97,7 +166,6 @@ export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: Cha
         <div className="flex gap-2 z-10">
           {/* Chat Invite Component */}
           <ChatInvite chatId={chatId} />
-
           {/* Chat Settings Component */}
           <ChatSettings chatId={chatId} />
         </div>
@@ -124,6 +192,11 @@ export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: Cha
               const isSystemMessage = msg.type === 'system';
               const isSelfMessage = isSystemMessage ? false : msg.sender.id === currentUserId;
 
+              // Get sender's role information
+              const senderRole = memberRoles?.find((member) => member.userId === msg.sender.id);
+              const senderRoleName = senderRole?.role || 'member';
+              const isCreator = senderRole?.isCreator || false;
+
               return (
                 <div key={msg.id} className="flex w-full">
                   <div
@@ -136,11 +209,20 @@ export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: Cha
                     }`}
                   >
                     {!isSystemMessage && (
-                      <p
-                        className={`font-medium text-sm mb-1 ${isSelfMessage ? 'text-blue-100' : 'text-gray-600'}`}
+                      <div
+                        className={`flex items-center gap-2 mb-1 ${isSelfMessage ? 'text-blue-100' : 'text-gray-600'}`}
                       >
-                        {isSelfMessage ? 'Me' : msg.sender.name}
-                      </p>
+                        <p className="font-medium text-sm">
+                          {isSelfMessage ? 'Me' : msg.sender.name}
+                        </p>
+                        {/* Role badge */}
+                        <Badge
+                          variant={getRoleBadgeVariant(senderRoleName, isCreator)}
+                          className="text-xs px-2 py-0.5 h-5"
+                        >
+                          {getRoleDisplayName(senderRoleName, isCreator)}
+                        </Badge>
+                      </div>
                     )}
                     <p className="break-words">{msg.content}</p>
                   </div>
@@ -152,20 +234,28 @@ export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: Cha
         )}
       </div>
 
-      {/* Message input */}
-      <form onSubmit={handleSendMessage} className="border-t p-3">
-        <div className="flex gap-2">
-          <Input
-            placeholder="Type a message..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            className="flex-1"
-          />
-          <Button type="submit" disabled={!message.trim()}>
-            Send
-          </Button>
+      {/* Message input - Hidden for viewers */}
+      {canSendMessages ? (
+        <form onSubmit={handleSendMessage} className="border-t p-3">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Type a message..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="flex-1"
+            />
+            <Button type="submit" disabled={!message.trim()}>
+              Send
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <div className="border-t p-3 bg-muted/50">
+          <div className="text-center text-sm text-muted-foreground py-2">
+            You have view-only access to this chat
+          </div>
         </div>
-      </form>
+      )}
     </div>
   );
 }

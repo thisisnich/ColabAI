@@ -12,7 +12,7 @@ export function UnauthorizedPage() {
           </div>
           <h1 className="text-2xl font-bold tracking-tight mb-2">Authentication Required</h1>
           <p className="text-muted-foreground">
-            You need to be logged in to access this page. Please sign in to view your financial data
+            You need to be logged in to access this page. Please sign in to view your chats
             securely.
           </p>
         </div>

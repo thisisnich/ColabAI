@@ -18,6 +18,7 @@ export function ChatInvite({ chatId }: ChatInviteProps) {
   const [expiresAt, setExpiresAt] = useState<number | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<string>('');
+  const [hasShownExpiredNotification, setHasShownExpiredNotification] = useState(false);
 
   // Mutations
   const createChatJoinCode = useSessionMutation(api.invite.createJoinCode);
@@ -43,6 +44,8 @@ export function ChatInvite({ chatId }: ChatInviteProps) {
       if (joinCode !== activeCodeQuery.code) {
         setJoinCode(activeCodeQuery.code);
         setExpiresAt(activeCodeQuery.expiresAt);
+        // Reset the notification flag when we get a new code
+        setHasShownExpiredNotification(false);
       }
     } else {
       // No active code or code was consumed
@@ -50,13 +53,14 @@ export function ChatInvite({ chatId }: ChatInviteProps) {
         setJoinCode(null);
         setExpiresAt(null);
 
-        // Only show notification if we had a code before
-        if (activeCodeQuery.reason === 'no_active_code') {
+        // Only show notification if we had a code before AND haven't shown it yet
+        if (activeCodeQuery.reason === 'no_active_code' && !hasShownExpiredNotification) {
           toast.info('Your chat join code was used or has expired');
+          setHasShownExpiredNotification(true);
         }
       }
     }
-  }, [activeCodeQuery, joinCode]);
+  }, [activeCodeQuery, joinCode, hasShownExpiredNotification]);
 
   // Update timer every second
   useEffect(() => {

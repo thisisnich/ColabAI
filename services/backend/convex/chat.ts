@@ -284,6 +284,7 @@ export const addMemberToChat = mutation({
       chatId: args.chatId,
       userId: args.userId,
       joinedAt: now,
+      role: 'viewer', // Default role for new members
     });
 
     // Update the chat's updatedAt field
@@ -296,128 +297,6 @@ export const addMemberToChat = mutation({
       chatId: args.chatId,
       userId: user._id,
       content: `${user.name} added ${userToAdd.name} to the chat`,
-      timestamp: now,
-    });
-
-    return { success: true };
-  },
-});
-/**
- * Remove a user from a chat
- */
-export const removeMemberFromChat = mutation({
-  args: {
-    chatId: v.id('chats'),
-    userId: v.id('users'),
-    ...SessionIdArg,
-  },
-  handler: async (ctx, args) => {
-    const user = await getAuthUser(ctx, args);
-    if (!user) {
-      throw new Error('Unauthorized');
-    }
-
-    // Get the chat
-    const chat = await ctx.db.get(args.chatId);
-    if (!chat) {
-      throw new ConvexError({
-        code: 'NOT_FOUND',
-        message: 'Chat not found',
-      });
-    }
-
-    // Check if current user is a member of the chat
-    const currentUserMembership = await ctx.db
-      .query('chatMemberships')
-      .withIndex('by_user_chat', (q) => q.eq('userId', user._id).eq('chatId', args.chatId))
-      .unique();
-
-    if (!currentUserMembership) {
-      throw new ConvexError({
-        code: 'FORBIDDEN',
-        message: 'You do not have access to this chat',
-      });
-    }
-
-    // Check if removing self
-    const isSelf = args.userId === user._id;
-
-    // Only the creator can remove others, but anyone can remove themself
-    if (!isSelf && chat.createdBy !== user._id) {
-      throw new ConvexError({
-        code: 'FORBIDDEN',
-        message: 'Only the creator can remove members',
-      });
-    }
-
-    // Get the user to remove
-    const userToRemove = await ctx.db.get(args.userId);
-    if (!userToRemove) {
-      throw new ConvexError({
-        code: 'NOT_FOUND',
-        message: 'User to remove not found',
-      });
-    }
-
-    // Check if user is a member
-    const userMembership = await ctx.db
-      .query('chatMemberships')
-      .withIndex('by_user_chat', (q) => q.eq('userId', args.userId).eq('chatId', args.chatId))
-      .unique();
-
-    if (!userMembership) {
-      return { success: true, notMember: true };
-    }
-
-    // Cannot remove the creator
-    if (args.userId === chat.createdBy && !isSelf) {
-      throw new ConvexError({
-        code: 'FORBIDDEN',
-        message: 'Cannot remove the creator of the chat',
-      });
-    }
-
-    // Remove the membership
-    const now = Date.now();
-    await ctx.db.delete(userMembership._id);
-
-    // Check if there are any members left
-    const remainingMembers = await ctx.db
-      .query('chatMemberships')
-      .withIndex('by_chat', (q) => q.eq('chatId', args.chatId))
-      .collect();
-
-    // If no members left, delete the chat
-    if (remainingMembers.length === 0) {
-      // Delete all messages first
-      const messages = await ctx.db
-        .query('messages')
-        .withIndex('by_chat', (q) => q.eq('chatId', args.chatId))
-        .collect();
-
-      for (const message of messages) {
-        await ctx.db.delete(message._id);
-      }
-
-      // Delete the chat
-      await ctx.db.delete(args.chatId);
-      return { success: true, chatDeleted: true };
-    }
-
-    // Update the chat's updatedAt
-    await ctx.db.patch(args.chatId, {
-      updatedAt: now,
-    });
-
-    // Add a system message
-    const message = isSelf
-      ? `${user.name} left the chat`
-      : `${user.name} removed ${userToRemove.name} from the chat`;
-
-    await ctx.db.insert('messages', {
-      chatId: args.chatId,
-      userId: user._id,
-      content: message,
       timestamp: now,
     });
 

@@ -197,6 +197,7 @@ export const joinChatWithCode = mutation({
       chatId: joinCode.chatId,
       userId: existingSession.userId,
       joinedAt: Date.now(),
+      role: 'viewer', // Default role
     });
 
     // Notify chat about new member
