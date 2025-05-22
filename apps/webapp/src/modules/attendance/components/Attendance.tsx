@@ -17,7 +17,7 @@ import type { Doc } from '@workspace/backend/convex/_generated/dataModel';
 import { useSessionQuery } from 'convex-helpers/react/sessions';
 import { CheckCircle2, ChevronDown, LogIn, XCircle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { AttendanceDialog } from './AttendanceDialog';
 import { AttendanceEmptyState } from './AttendanceEmptyState';
 
@@ -27,7 +27,8 @@ interface AttendanceModuleProps {
   expectedNames?: string[];
 }
 
-export const Attendance = ({
+// Internal component that uses useSearchParams
+const AttendanceContent = ({
   attendanceKey,
   title = 'Attendance',
   expectedNames = [],
@@ -489,5 +490,22 @@ export const Attendance = ({
         />
       )}
     </>
+  );
+};
+
+// Main component with Suspense boundary
+export const Attendance = (props: AttendanceModuleProps) => {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      }
+    >
+      <AttendanceContent {...props} />
+    </Suspense>
   );
 };
