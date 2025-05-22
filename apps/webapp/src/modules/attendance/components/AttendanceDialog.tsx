@@ -182,7 +182,7 @@ export function AttendanceDialog({
           </DialogDescription>
         </DialogHeader>
         <div>
-          <Separator className="my-2" />
+          <Separator className="mb-2" />
 
           <div className="space-y-2">
             {isAuthenticated && (
@@ -217,7 +217,7 @@ export function AttendanceDialog({
 
             <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
               <div>
-                <Label htmlFor="status" className="text-sm font-medium">
+                <Label htmlFor="status" className="text-sm font-medium mb-2">
                   Attendance Status
                 </Label>
                 <Select
@@ -252,29 +252,30 @@ export function AttendanceDialog({
             </div>
 
             <div>
-              <Separator className="my-4" />
-
               {canDelete && (
-                <div className="flex justify-center items-center gap-4">
-                  <div className="text-sm text-muted-foreground">OR</div>
-                  <div className="flex justify-center">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={handleDelete}
-                      disabled={deleteLoading}
-                      className="w-fit"
-                    >
-                      {deleteLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <>
-                          <Trash2 className="h-4 w-4 mr-1" /> Delete this response
-                        </>
-                      )}
-                    </Button>
+                <>
+                  <Separator className="my-4" />
+                  <div className="flex justify-center items-center gap-4">
+                    <div className="text-sm text-muted-foreground">OR</div>
+                    <div className="flex justify-center">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleDelete}
+                        disabled={deleteLoading}
+                        className="w-fit"
+                      >
+                        {deleteLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Trash2 className="h-4 w-4 mr-1" /> Delete this response
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                </>
               )}
             </div>
           </div>
