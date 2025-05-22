@@ -75,7 +75,6 @@ export function ChatInvite({ chatId }: ChatInviteProps) {
         clearInterval(interval);
         setJoinCode(null);
         setExpiresAt(null);
-        toast.info('Your chat join code has expired');
       }
     }, 1000);
 
