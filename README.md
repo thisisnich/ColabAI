@@ -95,14 +95,14 @@ To deploy your NextJS frontend to Vercel:
 1. Navigate to your Convex dashboard:
    - Go to [Convex dashboard](https://dashboard.convex.dev)
    - Navigate to Settings > URL & Deploy Key
-   - Copy the "Deployment URL"
+   - Copy the Deployment URL
 
 2. Set up the environment variable in Vercel:
-   - Go to your Vercel project settings
-   - Navigate to Environment Variables
+   - Go to the Vercel dashboard
+   - Navigate to Project Settings > Environment Variables
    - Add a new variable:
      - Name: `NEXT_PUBLIC_CONVEX_URL`
-     - Value: Paste the "Deployment URL" you copied from Convex
+     - Value: Paste the Deployment URL you copied from Convex
 
 3. Deploy your NextJS application to Vercel as usual.
 
