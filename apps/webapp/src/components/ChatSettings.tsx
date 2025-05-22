@@ -4,6 +4,7 @@ import { useSessionMutation, useSessionQuery } from 'convex-helpers/react/sessio
 import { ChevronDown, LogOut, Settings, Shield, UserMinus } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { ChatInvite } from './ChatInvite';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';

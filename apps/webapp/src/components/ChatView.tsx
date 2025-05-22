@@ -165,7 +165,10 @@ export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: Cha
         {/* Right section - always visible */}
         <div className="flex gap-2 z-10">
           {/* Chat Invite Component */}
-          <ChatInvite chatId={chatId} />
+          {/* Chat Invite Component (hidden for viewers) */}
+          {currentUserRole?.role === 'admin' ||
+            (currentUserRole?.role === 'creator' && <ChatInvite chatId={chatId} />)}
+
           {/* Chat Settings Component */}
           <ChatSettings chatId={chatId} />
         </div>
