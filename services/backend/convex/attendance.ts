@@ -19,7 +19,7 @@ export const recordAttendance = mutation({
     ...SessionIdArg,
   },
   handler: async (ctx, args) => {
-    let userId = undefined;
+    let attendanceUserId = undefined; //the user id associated with the attendance record
     const name = args.name;
     const attendanceKey = args.attendanceKey || ATTENDANCE_KEY;
     const self = args.self ?? false;
@@ -28,32 +28,32 @@ export const recordAttendance = mutation({
 
     // For authenticated users
     const user = await getAuthUser(ctx, args);
-    if (user) {
-      if (self) {
-        userId = user._id;
-      }
+    if (user && self) {
+      attendanceUserId = user._id; //only associate the user if they are recording for themselves
     }
 
     // Name is required if not authenticated or not self
-    if (!userId && !name) {
+    if (!attendanceUserId && !name) {
       throw new ConvexError('Name is required for anonymous attendance');
     }
 
-    // Check if this user/name already has a record
-    const existingRecords = await ctx.db
-      .query('attendanceRecords')
-      .withIndex('by_user_attendance', (q) =>
-        q.eq('attendanceKey', attendanceKey).eq('userId', userId)
-      )
-      .collect();
-
-    //delete all existing records
-    await Promise.all(existingRecords.map((record) => ctx.db.delete(record._id)));
+    // delete any records already associated with this user
+    if (attendanceUserId) {
+      // if the user is registering
+      const existingRecords = await ctx.db
+        .query('attendanceRecords')
+        .withIndex('by_user_attendance', (q) =>
+          q.eq('attendanceKey', attendanceKey).eq('userId', attendanceUserId)
+        )
+        .collect();
+      //delete all existing records
+      await Promise.all(existingRecords.map((record) => ctx.db.delete(record._id)));
+    }
 
     // Create a new record
     return ctx.db.insert('attendanceRecords', {
       attendanceKey,
-      userId,
+      userId: attendanceUserId,
       name,
       timestamp: Date.now(),
       status: args.status,
