@@ -58,6 +58,11 @@ export default defineSchema({
         type: v.literal('anonymous'),
         name: v.string(), //system generated name
         recoveryCode: v.optional(v.string()),
+      }),
+      v.object({
+        type: v.literal('chatbot'),
+        name: v.string(),
+        username: v.string(), //system generated name
       })
     )
   )
