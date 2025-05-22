@@ -50,6 +50,12 @@ export const recordAttendance = mutation({
       await Promise.all(existingRecords.map((record) => ctx.db.delete(record._id)));
     }
 
+    // delete any records with the same name
+    const existingRecords = await ctx.db
+      .query('attendanceRecords')
+      .withIndex('by_name_attendance', (q) => q.eq('attendanceKey', attendanceKey).eq('name', name))
+      .collect();
+    await Promise.all(existingRecords.map((record) => ctx.db.delete(record._id)));
     // Create a new record
     return ctx.db.insert('attendanceRecords', {
       attendanceKey,
@@ -59,6 +65,35 @@ export const recordAttendance = mutation({
       status: args.status,
       reason: args.status === 'not_attending' ? args.reason : undefined,
     });
+  },
+});
+
+// Delete an attendance record
+export const deleteAttendanceRecord = mutation({
+  args: {
+    recordId: v.id('attendanceRecords'),
+    ...SessionIdArg,
+  },
+  handler: async (ctx, args) => {
+    // Get the record to check permissions
+    const record = await ctx.db.get(args.recordId);
+    if (!record) {
+      throw new ConvexError('Attendance record not found');
+    }
+
+    // Check if the user is authorized to delete this record
+    const user = await getAuthUser(ctx, args);
+
+    // Only allow deletion if:
+    // 1. The user is the owner of the record (their userId matches)
+    // 2. The record doesn't have a userId (anonymous entry)
+    if (record.userId && (!user || record.userId !== user._id)) {
+      throw new ConvexError('Not authorized to delete this attendance record');
+    }
+
+    // Delete the record
+    await ctx.db.delete(args.recordId);
+    return { success: true };
   },
 });
 

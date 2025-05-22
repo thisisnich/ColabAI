@@ -4,24 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuthState, useCurrentUser } from '@/modules/auth/AuthProvider';
 import { api } from '@workspace/backend/convex/_generated/api';
+import type { Doc } from '@workspace/backend/convex/_generated/dataModel';
 import { useSessionMutation, useSessionQuery } from 'convex-helpers/react/sessions';
 import { useMutation, useQuery } from 'convex/react';
 import { CheckCircle2, Plus, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import type { AttendanceStatus } from '../types';
 import { AttendanceDialog } from './AttendanceDialog';
-
-// Define a type for the record as it comes from the API
-interface ApiAttendanceRecord {
-  _id: string;
-  _creationTime: number;
-  attendanceKey: string;
-  timestamp: number;
-  userId?: string;
-  name?: string;
-  status?: 'attending' | 'not_attending';
-  reason?: string;
-}
 
 interface AttendanceModuleProps {
   attendanceKey: string;
@@ -44,15 +34,14 @@ export const AttendanceModule = ({
     attendanceKey,
   });
 
-  const attendanceRecords: ApiAttendanceRecord[] = attendanceData?.records || [];
+  const attendanceRecords = attendanceData?.records || [];
   const currentUserResponse = attendanceData?.currentUserResponse;
-  const recordAttendance = useSessionMutation(api.attendance.recordAttendance);
 
   // Check if the current user is already in the attendance list
   const isCurrentUserRegistered = Boolean(currentUserResponse);
 
   // Create a map of names to their attendance records
-  const attendanceMap = new Map<string, ApiAttendanceRecord>();
+  const attendanceMap = new Map<string, Doc<'attendanceRecords'>>();
   for (const record of attendanceRecords) {
     if (record.name) {
       attendanceMap.set(record.name, record);
@@ -111,15 +100,11 @@ export const AttendanceModule = ({
   const notAttendingCount = attendanceRecords.filter((r) => r.status === 'not_attending').length;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold">{title}</h2>
-      </div>
-
+    <>
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex justify-between items-center">
-            <span>Attendees</span>
+            <span>{title}</span>
             {attendanceData === undefined ? (
               <Skeleton className="h-6 w-20" />
             ) : (
@@ -224,9 +209,9 @@ export const AttendanceModule = ({
           onClose={handleDialogClose}
           personName={selectedPerson}
           attendanceKey={attendanceKey}
-          attendanceRecords={attendanceRecords as any}
+          attendanceRecords={attendanceRecords}
         />
       )}
-    </div>
+    </>
   );
 };

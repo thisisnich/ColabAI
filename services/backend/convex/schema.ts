@@ -54,6 +54,7 @@ export default defineSchema({
     reason: v.optional(v.string()), // Optional reason for not attending
   })
     .index('by_attendance', ['attendanceKey'])
+    .index('by_name_attendance', ['attendanceKey', 'name'])
     .index('by_user_attendance', ['attendanceKey', 'userId']),
 
   // auth
