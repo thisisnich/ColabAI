@@ -257,55 +257,46 @@ const AttendanceContent = ({
                       const record = attendanceMap.get(name);
                       const status = record?.status;
                       const reason = record?.reason;
+                      const remarks = record?.remarks;
                       const isYou = isCurrentUser(name);
 
                       return (
                         <div key={name} className="p-2 border rounded-md relative hover:bg-gray-50">
-                          <div className="flex items-center justify-between">
-                            <Button
-                              variant="ghost"
-                              className="flex items-center text-left justify-start p-2 h-auto w-full"
-                              onClick={() => handlePersonClick(name)}
-                            >
-                              <div className="flex items-center">
-                                {status === 'attending' ? (
-                                  <CheckCircle2 className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                                ) : status === 'not_attending' ? (
-                                  <XCircle className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
-                                ) : (
-                                  <div className="h-4 w-4 rounded-full border mr-2 flex-shrink-0" />
+                          <button
+                            className="cursor-pointer w-full text-left p-0 inline-block"
+                            type="button"
+                            onClick={() => handlePersonClick(name)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handlePersonClick(name);
+                              }
+                            }}
+                          >
+                            <div className="flex items-center">
+                              {status === 'attending' ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                              ) : status === 'not_attending' ? (
+                                <XCircle className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
+                              ) : (
+                                <div className="h-4 w-4 rounded-full border mr-2 flex-shrink-0" />
+                              )}
+                              <span className="ml-2">
+                                {name}
+                                {isYou && (
+                                  <span className="ml-1 text-sm text-muted-foreground">(you)</span>
                                 )}
-                                <span>
-                                  {name}
-                                  {isYou && (
-                                    <span className="ml-1 text-sm text-muted-foreground">
-                                      (you)
-                                    </span>
-                                  )}
-                                </span>
-                              </div>
-                            </Button>
-
-                            {status === 'not_attending' && reason && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0 ml-2 flex-shrink-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleExpand(name);
-                                }}
-                              >
-                                {expanded === name ? '-' : '+'}
-                              </Button>
-                            )}
-                          </div>
-
-                          {expanded === name && reason && (
-                            <div className="mt-2 p-2 text-sm bg-muted rounded-md w-full">
-                              {reason}
+                              </span>
                             </div>
-                          )}
+
+                            {/* Always show reason or remarks */}
+                            {(status === 'not_attending' && reason) ||
+                            (status === 'attending' && remarks) ? (
+                              <div className="mt-1 text-sm text-muted-foreground">
+                                {status === 'attending' && remarks && <p>Remarks: {remarks}</p>}
+                                {status === 'not_attending' && reason && <p>Reason: {reason}</p>}
+                              </div>
+                            ) : null}
+                          </button>
                         </div>
                       );
                     })}
@@ -332,21 +323,26 @@ const AttendanceContent = ({
                       const isYou = isCurrentUser(name);
                       return (
                         <div key={name} className="p-2 border rounded-md relative hover:bg-gray-50">
-                          <Button
-                            variant="ghost"
-                            className="flex items-center text-left justify-start p-2 h-auto w-full"
+                          <button
+                            className="cursor-pointer w-full text-left p-0 inline-block"
+                            type="button"
                             onClick={() => handlePersonClick(name)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handlePersonClick(name);
+                              }
+                            }}
                           >
                             <div className="flex items-center">
                               <div className="h-4 w-4 rounded-full border mr-2 flex-shrink-0" />
-                              <span>
+                              <span className="ml-2">
                                 {name}
                                 {isYou && (
                                   <span className="ml-1 text-sm text-muted-foreground">(you)</span>
                                 )}
                               </span>
                             </div>
-                          </Button>
+                          </button>
                         </div>
                       );
                     })}
@@ -412,55 +408,52 @@ const AttendanceContent = ({
                     const record = attendanceMap.get(name);
                     const status = record?.status;
                     const reason = record?.reason;
+                    const remarks = record?.remarks;
                     const isYou = isCurrentUser(name);
 
                     return (
                       <div key={name} className="p-2 border rounded-md relative hover:bg-gray-50">
-                        <div className="flex items-center justify-between">
-                          <Button
-                            variant="ghost"
-                            className="flex items-center text-left justify-start p-2 h-auto w-full"
-                            onClick={() => {
+                        <button
+                          className="cursor-pointer w-full text-left p-0 inline-block"
+                          type="button"
+                          onClick={() => {
+                            setSelectedPerson(name);
+                            setDialogOpen(true);
+                            setShowFullListModal(false);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
                               setSelectedPerson(name);
                               setDialogOpen(true);
                               setShowFullListModal(false);
-                            }}
-                          >
-                            <div className="flex items-center">
-                              {status === 'attending' ? (
-                                <CheckCircle2 className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                              ) : status === 'not_attending' ? (
-                                <XCircle className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
-                              ) : (
-                                <div className="h-4 w-4 rounded-full border mr-2 flex-shrink-0" />
+                            }
+                          }}
+                        >
+                          <div className="flex items-center">
+                            {status === 'attending' ? (
+                              <CheckCircle2 className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                            ) : status === 'not_attending' ? (
+                              <XCircle className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
+                            ) : (
+                              <div className="h-4 w-4 rounded-full border mr-2 flex-shrink-0" />
+                            )}
+                            <span className="ml-2">
+                              {name}
+                              {isYou && (
+                                <span className="ml-1 text-sm text-muted-foreground">(you)</span>
                               )}
-                              <span>
-                                {name}
-                                {isYou && (
-                                  <span className="ml-1 text-sm text-muted-foreground">(you)</span>
-                                )}
-                              </span>
-                            </div>
-                          </Button>
-                          {status === 'not_attending' && reason && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0 ml-2 flex-shrink-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleExpand(name);
-                              }}
-                            >
-                              {expanded === name ? '-' : '+'}
-                            </Button>
-                          )}
-                        </div>
-                        {expanded === name && reason && (
-                          <div className="mt-2 p-2 text-sm bg-muted rounded-md w-full">
-                            {reason}
+                            </span>
                           </div>
-                        )}
+
+                          {/* Always show reason or remarks */}
+                          {(status === 'not_attending' && reason) ||
+                          (status === 'attending' && remarks) ? (
+                            <div className="mt-1 text-sm text-muted-foreground">
+                              {status === 'attending' && remarks && <p>Remarks: {remarks}</p>}
+                              {status === 'not_attending' && reason && <p>Reason: {reason}</p>}
+                            </div>
+                          ) : null}
+                        </button>
                       </div>
                     );
                   })}

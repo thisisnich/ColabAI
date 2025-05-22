@@ -70,6 +70,7 @@ export function AttendanceDialog({
     (existingRecord?.status as AttendanceStatus) || AttendanceStatus.ATTENDING
   );
   const [reason, setReason] = useState(existingRecord?.reason || '');
+  const [remarks, setRemarks] = useState(existingRecord?.remarks || '');
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
@@ -86,6 +87,7 @@ export function AttendanceDialog({
     if (existingRecord) {
       setStatus((existingRecord.status as AttendanceStatus) || AttendanceStatus.ATTENDING);
       setReason(existingRecord.reason || '');
+      setRemarks(existingRecord.remarks || '');
     }
   }, [existingRecord]);
 
@@ -99,6 +101,7 @@ export function AttendanceDialog({
           attendanceKey,
           status,
           reason: status === AttendanceStatus.NOT_ATTENDING ? reason : undefined,
+          remarks: status === AttendanceStatus.ATTENDING ? remarks : undefined,
           self: true,
         });
         toast.success('Your attendance has been recorded');
@@ -108,6 +111,7 @@ export function AttendanceDialog({
           name: personName,
           status,
           reason: status === AttendanceStatus.NOT_ATTENDING ? reason : undefined,
+          remarks: status === AttendanceStatus.ATTENDING ? remarks : undefined,
           self: false,
         });
         toast.success(`Attendance recorded for ${personName}`);
@@ -135,6 +139,7 @@ export function AttendanceDialog({
     recordAttendance,
     respondAs,
     status,
+    remarks,
   ]);
 
   // Handle keyboard shortcuts
@@ -252,6 +257,22 @@ export function AttendanceDialog({
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     placeholder="Why can't you attend?"
+                    rows={3}
+                    className="resize-none"
+                  />
+                </div>
+              )}
+
+              {status === AttendanceStatus.ATTENDING && (
+                <div className="space-y-2 pt-2">
+                  <Label htmlFor="remarks" className="text-sm font-medium">
+                    Remarks (optional)
+                  </Label>
+                  <Textarea
+                    id="remarks"
+                    value={remarks}
+                    onChange={(e) => setRemarks(e.target.value)}
+                    placeholder="Any remarks or suggestions?"
                     rows={3}
                     className="resize-none"
                   />

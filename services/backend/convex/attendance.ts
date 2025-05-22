@@ -13,6 +13,7 @@ export const recordAttendance = mutation({
     name: v.string(),
     status: v.union(v.literal('attending'), v.literal('not_attending')),
     reason: v.optional(v.string()),
+    remarks: v.optional(v.string()),
     self: v.optional(v.boolean()),
     ...SessionIdArg,
   },
@@ -21,8 +22,6 @@ export const recordAttendance = mutation({
     const name = args.name;
     const attendanceKey = args.attendanceKey || ATTENDANCE_KEY;
     const self = args.self ?? false;
-
-    console.log('args', args);
 
     // For authenticated users
     const user = await getAuthUserOptional(ctx, args);
@@ -62,6 +61,7 @@ export const recordAttendance = mutation({
       timestamp: Date.now(),
       status: args.status,
       reason: args.status === 'not_attending' ? args.reason : undefined,
+      remarks: args.status === 'attending' ? args.remarks : undefined,
     });
   },
 });
