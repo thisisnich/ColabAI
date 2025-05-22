@@ -1,7 +1,13 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,11 +15,11 @@ import { useCurrentUser } from '@/modules/auth/AuthProvider';
 import { api } from '@workspace/backend/convex/_generated/api';
 import type { Doc } from '@workspace/backend/convex/_generated/dataModel';
 import { useSessionQuery } from 'convex-helpers/react/sessions';
-import { CheckCircle2, ChevronDown, Plus, XCircle } from 'lucide-react';
+import { CheckCircle2, ChevronDown, LogIn, XCircle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { toast } from 'sonner';
 import { AttendanceDialog } from './AttendanceDialog';
+import { AttendanceEmptyState } from './AttendanceEmptyState';
 
 interface AttendanceModuleProps {
   attendanceKey: string;
@@ -35,6 +41,8 @@ export const Attendance = ({
   const [selectedPerson, setSelectedPerson] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showFullListModal, setShowFullListModal] = useState(false);
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [modalSearchQuery, setModalSearchQuery] = useState('');
   const attendanceData = useSessionQuery(api.attendance.getAttendanceData, {
     attendanceKey,
   });
@@ -94,7 +102,7 @@ export const Attendance = ({
 
   const handleJoin = () => {
     if (!isAuthenticated || !currentUser) {
-      toast.error('You need to be logged in to join');
+      setLoginDialogOpen(true);
       return;
     }
 
@@ -140,7 +148,7 @@ export const Attendance = ({
     }
   }
 
-  // Convert set to array and filter by search query
+  // Convert set to array and filter by search query for main lists
   const filteredNames = Array.from(allNames).filter((name) =>
     name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -159,9 +167,26 @@ export const Attendance = ({
   // Get the names to display based on active tab
   const displayNames = activeTab === 'pending' ? pendingNames : respondedNames;
 
+  // For the modal, we want to keep a separate list filtered by modalSearchQuery
+  const modalFilteredNames = Array.from(allNames).filter((name) => {
+    // If we're in the modal, use the activeTab to determine which list to show
+    const record = attendanceMap.get(name);
+    const isInActiveTabList = activeTab === 'pending' ? !record?.status : record?.status;
+
+    // Then filter by the modal search query
+    return isInActiveTabList && name.toLowerCase().includes(modalSearchQuery.toLowerCase());
+  });
+
   const attendingCount = attendanceRecords.filter((r) => r.status === 'attending').length;
   const notAttendingCount = attendanceRecords.filter((r) => r.status === 'not_attending').length;
   const pendingCount = pendingNames.length;
+
+  // Reset modal search when opening the modal
+  useEffect(() => {
+    if (showFullListModal) {
+      setModalSearchQuery('');
+    }
+  }, [showFullListModal]);
 
   return (
     <>
@@ -192,16 +217,6 @@ export const Attendance = ({
           </div>
         ) : (
           <>
-            {!isCurrentUserRegistered && (
-              <Button
-                variant="outline"
-                className="w-full mb-4 flex items-center justify-center"
-                onClick={handleJoin}
-              >
-                <Plus className="h-4 w-4 mr-2" /> Join
-              </Button>
-            )}
-
             <div className="mb-4">
               <input
                 type="text"
@@ -228,7 +243,7 @@ export const Attendance = ({
 
               <TabsContent value="responded">
                 {respondedNames.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-4">No responses yet</div>
+                  <AttendanceEmptyState message="No results found" onJoin={handleJoin} />
                 ) : (
                   <div className="space-y-2">
                     {respondedNames.slice(0, 7).map((name) => {
@@ -303,7 +318,7 @@ export const Attendance = ({
 
               <TabsContent value="pending">
                 {pendingNames.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-4">No pending responses</div>
+                  <AttendanceEmptyState message="No results found" onJoin={handleJoin} />
                 ) : (
                   <div className="space-y-2">
                     {pendingNames.slice(0, 7).map((name) => {
@@ -346,6 +361,24 @@ export const Attendance = ({
         )}
       </div>
 
+      {/* Login dialog */}
+      <Dialog open={loginDialogOpen} onOpenChange={setLoginDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Login Required</DialogTitle>
+            <DialogDescription>You need to be logged in to mark your attendance.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setLoginDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => router.push('/login')} className="flex items-center">
+              <LogIn className="h-4 w-4 mr-2" /> Go to Login
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Full list modal - update to show based on active tab */}
       <Dialog open={showFullListModal} onOpenChange={setShowFullListModal}>
         <DialogContent className="sm:max-w-[425px]">
@@ -355,73 +388,87 @@ export const Attendance = ({
               {displayNames.length})
             </DialogTitle>
           </DialogHeader>
-          <div>
+          <div className="mb-4">
             <input
               type="text"
               placeholder="Search names..."
               className="w-full px-3 py-2 border rounded-md"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={modalSearchQuery}
+              onChange={(e) => setModalSearchQuery(e.target.value)}
             />
           </div>
-          <ScrollArea className="max-h-[400px]">
-            <div className="space-y-2">
-              {displayNames.map((name) => {
-                const record = attendanceMap.get(name);
-                const status = record?.status;
-                const reason = record?.reason;
-                const isYou = isCurrentUser(name);
+          <div className="h-[350px]">
+            <ScrollArea className="h-full">
+              {modalFilteredNames.length > 0 ? (
+                <div className="space-y-2">
+                  {modalFilteredNames.map((name) => {
+                    const record = attendanceMap.get(name);
+                    const status = record?.status;
+                    const reason = record?.reason;
+                    const isYou = isCurrentUser(name);
 
-                return (
-                  <div key={name} className="p-2 border rounded-md relative hover:bg-gray-50">
-                    <div className="flex items-center justify-between">
-                      <Button
-                        variant="ghost"
-                        className="flex items-center text-left justify-start p-2 h-auto w-full"
-                        onClick={() => {
-                          setSelectedPerson(name);
-                          setDialogOpen(true);
-                          setShowFullListModal(false);
-                        }}
-                      >
-                        <div className="flex items-center">
-                          {status === 'attending' ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                          ) : status === 'not_attending' ? (
-                            <XCircle className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
-                          ) : (
-                            <div className="h-4 w-4 rounded-full border mr-2 flex-shrink-0" />
+                    return (
+                      <div key={name} className="p-2 border rounded-md relative hover:bg-gray-50">
+                        <div className="flex items-center justify-between">
+                          <Button
+                            variant="ghost"
+                            className="flex items-center text-left justify-start p-2 h-auto w-full"
+                            onClick={() => {
+                              setSelectedPerson(name);
+                              setDialogOpen(true);
+                              setShowFullListModal(false);
+                            }}
+                          >
+                            <div className="flex items-center">
+                              {status === 'attending' ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                              ) : status === 'not_attending' ? (
+                                <XCircle className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
+                              ) : (
+                                <div className="h-4 w-4 rounded-full border mr-2 flex-shrink-0" />
+                              )}
+                              <span>
+                                {name}
+                                {isYou && (
+                                  <span className="ml-1 text-sm text-muted-foreground">(you)</span>
+                                )}
+                              </span>
+                            </div>
+                          </Button>
+                          {status === 'not_attending' && reason && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 ml-2 flex-shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleExpand(name);
+                              }}
+                            >
+                              {expanded === name ? '-' : '+'}
+                            </Button>
                           )}
-                          <span>
-                            {name}
-                            {isYou && (
-                              <span className="ml-1 text-sm text-muted-foreground">(you)</span>
-                            )}
-                          </span>
                         </div>
-                      </Button>
-                      {status === 'not_attending' && reason && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 ml-2 flex-shrink-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleExpand(name);
-                          }}
-                        >
-                          {expanded === name ? '-' : '+'}
-                        </Button>
-                      )}
-                    </div>
-                    {expanded === name && reason && (
-                      <div className="mt-2 p-2 text-sm bg-muted rounded-md w-full">{reason}</div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </ScrollArea>
+                        {expanded === name && reason && (
+                          <div className="mt-2 p-2 text-sm bg-muted rounded-md w-full">
+                            {reason}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <AttendanceEmptyState
+                  message="No results found"
+                  onJoin={() => {
+                    setShowFullListModal(false);
+                    handleJoin();
+                  }}
+                />
+              )}
+            </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
 
