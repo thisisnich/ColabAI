@@ -8,7 +8,14 @@ alwaysApply: true
 This location of the frontend project is in `apps/webapp`.
 
 ## UI Design - Components & Icons
-This project uses @radix-ui/react-icons for the icons, and shadcn for the components.
+
+This project uses the following libraries
+- Components
+    - ShadCN
+- Icons
+    - @radix-ui/react-icons
+    - lucide-react 
+
 
 ### Shadcn
 - When adding a new component, use the command format `npx shadcn@latest add <component-name>`
