@@ -7,6 +7,9 @@ alwaysApply: true
 # Frontend Development
 This location of the frontend project is in `apps/webapp`.
 
+## IMPORTANT RULES
+- NEVER run the `dev` command to start the dev server unless explicitly told to do so.
+
 ## UI Design - Components & Icons
 
 This project uses the following libraries
