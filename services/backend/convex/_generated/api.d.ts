@@ -25,6 +25,7 @@ import type * as migration from "../migration.js";
 import type * as presentations from "../presentations.js";
 import type * as serviceDesk from "../serviceDesk.js";
 import type * as settings from "../settings.js";
+import type * as tokens from "../tokens.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -47,6 +48,7 @@ declare const fullApi: ApiFromModules<{
   presentations: typeof presentations;
   serviceDesk: typeof serviceDesk;
   settings: typeof settings;
+  tokens: typeof tokens;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

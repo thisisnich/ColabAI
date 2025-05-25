@@ -4,11 +4,11 @@ import { useSessionMutation, useSessionQuery } from 'convex-helpers/react/sessio
 import { useEffect, useRef, useState } from 'react';
 import { ChatInvite } from './ChatInvite';
 import { ChatSettings } from './ChatSettings';
+import { ContextSettings } from './ContextSettings';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Skeleton } from './ui/skeleton';
-
 interface ChatViewProps {
   chatId: Id<'chats'>;
   onToggleSidebar: () => void;
@@ -166,6 +166,7 @@ export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: Cha
         <div className="flex gap-2 z-10">
           {/* Chat Invite Component */}
           {/* Chat Invite Component (hidden for viewers) */}
+          <ContextSettings chatId={chatId} />
           {currentUserRole?.role === 'admin' ||
             (currentUserRole?.role === 'creator' && <ChatInvite chatId={chatId} />)}
 

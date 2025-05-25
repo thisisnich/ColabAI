@@ -7,6 +7,45 @@ export default defineSchema({
   appInfo: defineTable({
     latestVersion: v.string(),
   }),
+
+  // Token tracking tables
+  userTokens: defineTable({
+    userId: v.id('users'),
+    totalTokensUsed: v.number(), // Total tokens consumed by this user
+    monthlyTokensUsed: v.number(), // Tokens used this month (resets monthly)
+    monthlyLimit: v.number(), // Monthly token limit for this user
+    purchasedTokens: v.number(), // Additional tokens purchased
+    lastResetDate: v.string(), // YYYY-MM format for monthly reset tracking
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    contextTokensUsed: v.optional(v.number()), // Tokens used for context processing
+    summaryTokensUsed: v.optional(v.number()), // Tokens used for summary generation
+  }).index('by_user', ['userId']),
+
+  tokenUsageHistory: defineTable({
+    userId: v.id('users'),
+    chatId: v.id('chats'),
+    command: v.string(), // e.g., "deepseek", "wikipedia", etc.
+    tokensUsed: v.number(), // Tokens consumed in this operation
+    inputTokens: v.optional(v.number()), // Tokens from user input
+    outputTokens: v.optional(v.number()), // Tokens from AI response
+    timestamp: v.number(),
+    cost: v.optional(v.number()), // Optional: cost in USD cents
+  })
+    .index('by_user_time', ['userId', 'timestamp'])
+    .index('by_chat_time', ['chatId', 'timestamp'])
+    .index('by_user_month', ['userId']) // For monthly aggregations
+    .index('by_command', ['command']), // For analytics
+
+  tokenPurchases: defineTable({
+    userId: v.id('users'),
+    tokensAdded: v.number(),
+    amountPaid: v.number(), // In USD cents
+    paymentProvider: v.string(), // e.g., "stripe", "paypal"
+    paymentId: v.string(), // External payment reference
+    timestamp: v.number(),
+  }).index('by_user_time', ['userId', 'timestamp']),
+
   presentationState: defineTable({
     key: v.string(), // The presentation key that identifies this presentation
     currentSlide: v.number(), // The current slide number
@@ -111,9 +150,14 @@ export default defineSchema({
     content: v.string(), // The message content
     timestamp: v.number(), // When the message was sent
     type: v.optional(v.string()), // Optional type of message (e.g., "system" for system messages)
+    includedInContext: v.optional(v.boolean()), // Whether message is included in context
+    isDeepSeekCommand: v.optional(v.boolean()), // Whether message starts with /deepseek
+    contextRelevance: v.optional(v.number()), // AI-scored relevance (0-1) for smart filtering
   })
     .index('by_chat_time', ['chatId', 'timestamp']) // For querying messages in a chat ordered by time
-    .index('by_chat', ['chatId']), // For simple membership queries
+    .index('by_chat', ['chatId']) // For simple membership queries
+    .index('by_chat_context', ['chatId', 'includedInContext'])
+    .index('by_chat_deepseek', ['chatId', 'isDeepSeekCommand']),
 
   // Chat join codes table (Added for invite functionality)
   chatJoinCodes: defineTable({
@@ -123,4 +167,28 @@ export default defineSchema({
     createdAt: v.number(), // When the code was created
     expiresAt: v.number(), // When the code expires
   }).index('by_code', ['code']), // For looking up codes
+  chatContextSettings: defineTable({
+    chatId: v.id('chats'),
+    contextMode: v.union(
+      v.literal('none'), // No context retention
+      v.literal('deepseek_only'), // Only /deepseek messages
+      v.literal('all_messages') // All messages in chat
+    ),
+    useSummaryContext: v.boolean(), // Whether to use AI summarization
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index('by_chat', ['chatId']),
+
+  // New table for storing context summaries
+  contextSummaries: defineTable({
+    chatId: v.id('chats'),
+    summary: v.string(), // AI-generated summary of context
+    messageCount: v.number(), // Number of messages summarized
+    lastMessageId: v.id('messages'), // Last message included in summary
+    tokensUsed: v.number(), // Tokens used to generate summary
+    createdAt: v.number(),
+    version: v.number(), // For tracking summary versions
+  })
+    .index('by_chat', ['chatId'])
+    .index('by_chat_version', ['chatId', 'version']),
 });
