@@ -244,7 +244,8 @@ export const getUserTokenStats = query({
 
     if (!userTokens) {
       // Instead of inserting here, return null or throw
-      throw new Error('Token tracking not initialized - please call initializeUserTokens first');
+      const init = await initializeUserTokens;
+      // throw new Error('Token tracking not initialized - please call initializeUserTokens first');
       // Or return null and handle it in your UI
     }
 
