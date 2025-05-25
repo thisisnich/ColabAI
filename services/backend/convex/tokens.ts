@@ -248,7 +248,30 @@ export const getUserTokenStats = query({
       // Or return null and handle it in your UI
     }
 
-    // Rest of your query logic...
+    const recentUsage = await ctx.db
+      .query('tokenUsageHistory')
+      .withIndex('by_user_time', (q) => q.eq('userId', user._id))
+      .order('desc')
+      .take(args.limit ?? 10);
+
+    // Get monthly purchases
+    const monthlyPurchases = await ctx.db
+      .query('tokenPurchases')
+      .withIndex('by_user_time', (q) => q.eq('userId', user._id))
+      .filter((q) => q.gte(q.field('timestamp'), getMonthStartTimestamp()))
+      .collect();
+
+    return {
+      totalTokensUsed: userTokens.totalTokensUsed,
+      monthlyTokensUsed: userTokens.monthlyTokensUsed,
+      monthlyLimit: userTokens.monthlyLimit,
+      purchasedTokens: userTokens.purchasedTokens,
+      availableTokens:
+        userTokens.monthlyLimit + userTokens.purchasedTokens - userTokens.monthlyTokensUsed,
+      lastResetDate: userTokens.lastResetDate,
+      recentUsage,
+      monthlyPurchases,
+    };
   },
 });
 // Helper functions
