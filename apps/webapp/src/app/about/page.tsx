@@ -158,12 +158,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isVisible }) => {
 const DemoSection = () => {
   const [currentMessage, setCurrentMessage] = useState(0);
 
-  const chatMessages = [
+const chatMessages = [
     {
       user: 'Sarah',
       role: 'Creator',
       message:
-        "Hey team, let's brainstorm ideas for our new product launch campaign. What do you think about targeting Gen Z specifically?",
+        "/deepseek what do you think about targeting Gen Z specifically for our new product launch campaign?",
       timestamp: '2 min ago',
     },
     {
@@ -180,8 +180,56 @@ const DemoSection = () => {
         'Building on that - we should definitely focus on sustainability messaging. Our target demos really care about environmental impact.',
       timestamp: '30 sec ago',
     },
-  ];
-
+    {
+      user: 'Sarah',
+      role: 'Creator',
+      message:
+        "Good point Mike! We're launching eco-friendly water bottles. I'm thinking we could partner with environmental nonprofits too.",
+      timestamp: '25 sec ago',
+    },
+    {
+      user: 'Alex',
+      role: 'Contributor',
+      message:
+        "Love the nonprofit angle! What about creating a challenge where users show how they're reducing plastic waste? Could go viral if done right.",
+      timestamp: '20 sec ago',
+    },
+    {
+      user: 'Mike',
+      role: 'Contributor',
+      message:
+        "/deepseek what do you think about Alex's challenge idea? How could we make it more engaging for Gen Z?",
+      timestamp: '15 sec ago',
+    },
+    {
+      user: 'DeepSeek AI',
+      role: 'Member',
+      message:
+        "Alex's challenge idea is solid! To make it more Gen Z-friendly: 1) Add gamification with point systems and leaderboards, 2) Create shareable templates/graphics for easy participation, 3) Partner with Gen Z creators to kickstart it, 4) Offer meaningful rewards like donations to environmental causes in winners' names, 5) Use trending audio/music on platforms. The key is making participation feel effortless and socially rewarding.",
+      timestamp: '10 sec ago',
+    },
+    {
+      user: 'Sarah',
+      role: 'Creator',
+      message:
+        "This is great! I especially like the donation rewards idea - it aligns with their values perfectly.",
+      timestamp: '5 sec ago',
+    },
+    {
+      user: 'Alex',
+      role: 'Contributor',
+      message:
+        "/deepseek how should we measure success for this type of campaign?",
+      timestamp: 'just now',
+    },
+    {
+      user: 'DeepSeek AI',
+      role: 'Member',
+      message:
+        "For measuring success, track these key metrics: 1) Participation rate (# of challenge entries), 2) Engagement quality (comments, shares, saves vs just likes), 3) User-generated content volume and reach, 4) Brand mention sentiment analysis, 5) Conversion rate from challenge participants to customers, 6) Community growth across platforms, 7) Long-term brand recall surveys. Focus on authentic engagement over vanity metrics - Gen Z sees through inflated numbers.",
+      timestamp: 'just now',
+    },
+];
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentMessage((prev) => (prev + 1) % chatMessages.length);
