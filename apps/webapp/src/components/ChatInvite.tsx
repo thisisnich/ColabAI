@@ -1,10 +1,16 @@
-import { api } from '@workspace/backend/convex/_generated/api';
-import type { Id } from '@workspace/backend/convex/_generated/dataModel';
-import { formatLoginCode } from '@workspace/backend/modules/auth/codeUtils';
+// ============================================================================
+// ChatInvite.tsx - STANDARDIZED
+// ============================================================================
+
 import { useSessionMutation, useSessionQuery } from 'convex-helpers/react/sessions';
 import { CopyIcon, Loader2, UserPlus } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+
+import { api } from '@workspace/backend/convex/_generated/api';
+import type { Id } from '@workspace/backend/convex/_generated/dataModel';
+import { formatLoginCode } from '@workspace/backend/modules/auth/codeUtils';
+
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 
@@ -13,18 +19,29 @@ interface ChatInviteProps {
 }
 
 export function ChatInvite({ chatId }: ChatInviteProps) {
-  // State
+  // ========================================
+  // State Management
+  // ========================================
+  const [isOpen, setIsOpen] = useState(false);
   const [joinCode, setJoinCode] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<number | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<string>('');
   const [hasShownExpiredNotification, setHasShownExpiredNotification] = useState(false);
 
-  // Mutations
-  const createChatJoinCode = useSessionMutation(api.invite.createJoinCode);
+  // ========================================
+  // Queries
+  // ========================================
   const activeCodeQuery = useSessionQuery(api.invite.getActiveChatJoinCode, { chatId });
 
-  // Function to calculate time remaining
+  // ========================================
+  // Mutations
+  // ========================================
+  const createChatJoinCode = useSessionMutation(api.invite.createJoinCode);
+
+  // ========================================
+  // Helper Functions
+  // ========================================
   const getTimeRemaining = useCallback((): string => {
     if (!expiresAt) return '';
 
@@ -35,68 +52,19 @@ export function ChatInvite({ chatId }: ChatInviteProps) {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   }, [expiresAt]);
 
-  // Keep join code synced with active code from backend
-  useEffect(() => {
-    if (!activeCodeQuery) return;
-
-    if (activeCodeQuery.success && activeCodeQuery.code && activeCodeQuery.expiresAt) {
-      // We have an active code
-      if (joinCode !== activeCodeQuery.code) {
-        setJoinCode(activeCodeQuery.code);
-        setExpiresAt(activeCodeQuery.expiresAt);
-        // Reset the notification flag when we get a new code
-        setHasShownExpiredNotification(false);
-      }
-    } else {
-      // No active code or code was consumed
-      if (joinCode) {
-        setJoinCode(null);
-        setExpiresAt(null);
-
-        // Only show notification if we had a code before AND haven't shown it yet
-        if (activeCodeQuery.reason === 'no_active_code' && !hasShownExpiredNotification) {
-          toast.info('Your chat join code was used or has expired');
-          setHasShownExpiredNotification(true);
-        }
-      }
-    }
-  }, [activeCodeQuery, joinCode, hasShownExpiredNotification]);
-
-  // Update timer every second
-  useEffect(() => {
-    if (!expiresAt) return;
-
-    const interval = setInterval(() => {
-      const remaining = getTimeRemaining();
-      setTimeRemaining(remaining);
-
-      // If expired, clear the code
-      if (remaining === '0:00') {
-        clearInterval(interval);
-        setJoinCode(null);
-        setExpiresAt(null);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [expiresAt, getTimeRemaining]);
-
-  // Handle code generation
+  // ========================================
+  // Event Handlers
+  // ========================================
   const handleGenerateCode = useCallback(async () => {
     setIsGenerating(true);
     try {
       const result = await createChatJoinCode({ chatId });
-      if (result.success) {
-        // Fix: Only set state if values are defined
-        if (result.code !== undefined && result.expiresAt !== undefined) {
-          setJoinCode(result.code);
-          setExpiresAt(result.expiresAt);
-          setTimeRemaining(getTimeRemaining());
-          toast.success('Join code generated successfully');
-        } else {
-          // Handle unexpected response format
-          toast.error('Invalid response from server');
-        }
+
+      if (result.success && result.code !== undefined && result.expiresAt !== undefined) {
+        setJoinCode(result.code);
+        setExpiresAt(result.expiresAt);
+        setTimeRemaining(getTimeRemaining());
+        toast.success('Join code generated successfully');
       } else {
         toast.error(result.message || 'Failed to generate join code');
       }
@@ -108,33 +76,74 @@ export function ChatInvite({ chatId }: ChatInviteProps) {
     }
   }, [chatId, createChatJoinCode, getTimeRemaining]);
 
-  // Handle copy code to clipboard
   const handleCopyCode = useCallback(() => {
-    if (joinCode) {
-      navigator.clipboard
-        .writeText(formatLoginCode(joinCode))
-        .then(() => {
-          toast.success('Join code copied to clipboard!');
-        })
-        .catch((err) => {
-          console.error('Failed to copy text: ', err);
-          toast.error('Failed to copy code.');
-        });
-    }
+    if (!joinCode) return;
+
+    navigator.clipboard
+      .writeText(formatLoginCode(joinCode))
+      .then(() => toast.success('Join code copied to clipboard!'))
+      .catch(() => toast.error('Failed to copy code.'));
   }, [joinCode]);
 
+  // ========================================
+  // Effects
+  // ========================================
+  useEffect(() => {
+    if (!activeCodeQuery) return;
+
+    if (activeCodeQuery.success && activeCodeQuery.code && activeCodeQuery.expiresAt) {
+      if (joinCode !== activeCodeQuery.code) {
+        setJoinCode(activeCodeQuery.code);
+        setExpiresAt(activeCodeQuery.expiresAt);
+        setHasShownExpiredNotification(false);
+      }
+    } else {
+      if (joinCode) {
+        setJoinCode(null);
+        setExpiresAt(null);
+
+        if (activeCodeQuery.reason === 'no_active_code' && !hasShownExpiredNotification) {
+          toast.info('Your chat join code was used or has expired');
+          setHasShownExpiredNotification(true);
+        }
+      }
+    }
+  }, [activeCodeQuery, joinCode, hasShownExpiredNotification]);
+
+  useEffect(() => {
+    if (!expiresAt) return;
+
+    const interval = setInterval(() => {
+      const remaining = getTimeRemaining();
+      setTimeRemaining(remaining);
+
+      if (remaining === '0:00') {
+        clearInterval(interval);
+        setJoinCode(null);
+        setExpiresAt(null);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [expiresAt, getTimeRemaining]);
+
+  // ========================================
+  // Main Render
+  // ========================================
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" title="Invite to chat">
+        <Button variant="ghost" className="flex items-center gap-2">
           <UserPlus className="h-4 w-4" />
-          <span className="sr-only">Invite to Chat</span>
+          <span>Invite</span>
         </Button>
       </DialogTrigger>
+
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Invite to Chat</DialogTitle>
         </DialogHeader>
+
         <div className="py-4">
           {joinCode ? (
             <div className="space-y-4">
@@ -148,7 +157,7 @@ export function ChatInvite({ chatId }: ChatInviteProps) {
                 </p>
               </div>
 
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-2">
                 <Button variant="secondary" onClick={handleGenerateCode} disabled={isGenerating}>
                   Generate New Code
                 </Button>
@@ -172,7 +181,7 @@ export function ChatInvite({ chatId }: ChatInviteProps) {
               <Button onClick={handleGenerateCode} disabled={isGenerating} className="w-full">
                 {isGenerating ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     <span>Generating...</span>
                   </>
                 ) : (

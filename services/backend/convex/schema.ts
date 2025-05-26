@@ -183,12 +183,12 @@ export default defineSchema({
   // New table for storing context summaries
   contextSummaries: defineTable({
     chatId: v.id('chats'),
-    summary: v.string(), // AI-generated summary of context
-    messageCount: v.number(), // Number of messages summarized
-    lastMessageId: v.id('messages'), // Last message included in summary
-    tokensUsed: v.number(), // Tokens used to generate summary
+    summary: v.string(),
+    messageCount: v.number(),
+    lastMessageId: v.id('messages'),
+    tokensUsed: v.number(),
     createdAt: v.number(),
-    version: v.number(), // For tracking summary versions
+    version: v.number(),
   })
     .index('by_chat', ['chatId'])
     .index('by_chat_version', ['chatId', 'version']),

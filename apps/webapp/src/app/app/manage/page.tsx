@@ -53,10 +53,14 @@ const TokenDashboard: React.FC = () => {
 
   // Token packages for purchase
   const tokenPackages: TokenPackage[] = [
-    { tokens: 10000, price: 1400, popular: false, id: 1 }, // $14.00
-    { tokens: 50000, price: 6000, popular: true, id: 2 }, // $60.00
-    { tokens: 100000, price: 11000, popular: false, id: 3 }, // $110.00
-    { tokens: 250000, price: 25000, popular: false, id: 4 }, // $250.00
+    { tokens: 10000, price: 99, popular: false, id: 1 }, // $0.99 — Entry level
+    { tokens: 50000, price: 249, popular: true, id: 2 }, // $2.49 — $0.000049/token
+    { tokens: 100000, price: 399, popular: false, id: 3 }, // $3.99 — $0.000039/token
+    { tokens: 250000, price: 699, popular: false, id: 4 }, // $6.99 — $0.000028/token
+
+    { tokens: 500000, price: 1199, popular: false, id: 5 }, // $11.99 — $0.000024/token
+    { tokens: 1000000, price: 1999, popular: true, id: 6 }, // $19.99 — $0.000019/token
+    // { tokens: 2500000, price: 3999, popular: false, id: 7 }, // $39.99 — $0.000015/token
   ];
 
   // Loading state
@@ -302,7 +306,7 @@ const TokenDashboard: React.FC = () => {
                 >
                   {pkg.popular && (
                     <div className="absolute -top-2 left-4 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                      Most Popular
+                      Popular
                     </div>
                   )}
                   <div className="flex items-center justify-between">

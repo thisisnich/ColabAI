@@ -1,9 +1,10 @@
 import { api } from '@workspace/backend/convex/_generated/api';
 import type { Id } from '@workspace/backend/convex/_generated/dataModel';
 import { useSessionMutation, useSessionQuery } from 'convex-helpers/react/sessions';
-import { useQuery } from 'convex/react';
-import { Eye, FileText, Globe, Info, MessageCircle, Settings, Zap } from 'lucide-react';
+import { Eye, FileCog, Globe, Info, MessageCircle, Settings, Zap } from 'lucide-react';
 import { useState } from 'react';
+import { useEffect } from 'react';
+import { ContextViewer } from './ContextViewer';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -17,7 +18,6 @@ import {
 } from './ui/dialog';
 import { Label } from './ui/label';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import { ScrollArea } from './ui/scroll-area';
 import { Switch } from './ui/switch';
 
 interface ContextSettingsProps {
@@ -28,7 +28,8 @@ type ContextMode = 'none' | 'deepseek_only' | 'all_messages';
 
 const contextModeOptions = [
   {
-    value: 'none' as const,
+    value: 'none',
+
     title: 'No Context',
     description: 'Each message is treated as a new conversation',
     tokenUsage: 'Minimal',
@@ -77,20 +78,19 @@ export function ContextSettings({ chatId }: ContextSettingsProps) {
   // Get user's token stats to show current usage
   const tokenStats = useSessionQuery(api.tokens.getUserTokenStats, { limit: 5 });
 
-  // Fetch context data for preview (only when viewer is open)
-  const contextData = useQuery(
-    api.chat.getContextMessages,
-    isContextViewerOpen ? { chatId, maxMessages: 50 } : 'skip'
-  );
+  console.log('Set Context Settings:', contextSettings);
 
-  const [selectedMode, setSelectedMode] = useState<ContextMode>(
-    contextSettings?.contextMode || 'deepseek_only'
-  );
-  const [useSummaryContext, setUseSummaryContext] = useState(
-    contextSettings?.useSummaryContext || false
-  );
+  const [selectedMode, setSelectedMode] = useState<ContextMode>('deepseek_only');
+  const [useSummaryContext, setUseSummaryContext] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Update state when contextSettings loads
+  useEffect(() => {
+    if (contextSettings) {
+      setSelectedMode(contextSettings.contextMode || 'deepseek_only');
+      setUseSummaryContext(contextSettings.useSummaryContext || false);
+    }
+  }, [contextSettings]);
   const handleSave = async () => {
     setIsLoading(true);
     try {
@@ -108,41 +108,16 @@ export function ContextSettings({ chatId }: ContextSettingsProps) {
   };
 
   const currentOption = contextModeOptions.find((opt) => opt.value === selectedMode);
+  console.log(currentOption);
+
   const availableTokens = tokenStats?.availableTokens || 0;
-
-  // Format context data for display
-  const formatContextForDisplay = () => {
-    if (!contextData) return 'Loading context...';
-
-    let content = '';
-
-    // Show summary if available
-    if (contextData.summary) {
-      content += `=== CONVERSATION SUMMARY ===\n${contextData.summary}\n\n`;
-    }
-
-    // Show recent messages
-    if (contextData.messages.length > 0) {
-      content += `=== RECENT MESSAGES (${contextData.messages.length}) ===\n`;
-      contextData.messages.forEach((msg, index) => {
-        const timestamp = new Date(msg.timestamp).toLocaleString();
-        const sender = msg.type === 'chatbot' ? 'AI Assistant' : msg.sender?.name || 'User';
-        content += `[${timestamp}] ${sender}:\n${msg.content}\n\n`;
-      });
-    }
-
-    // Show token usage estimate
-    content += `=== TOKEN USAGE ===\nEstimated tokens: ${contextData.tokenEstimate || 'Unknown'}\n`;
-
-    return content || 'No context available';
-  };
 
   return (
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
           <Button variant="outline" size="sm">
-            <Settings className="w-4 h-4 mr-2" />
+            <FileCog className="w-4 h-4 mr-2" />
             Context Settings
           </Button>
         </DialogTrigger>
@@ -266,7 +241,7 @@ export function ContextSettings({ chatId }: ContextSettingsProps) {
                       onCheckedChange={setUseSummaryContext}
                     />
                   </div>
-                  {useSummaryContext && (
+                  {/* {useSummaryContext && (
                     <div className="mt-3 p-3 bg-blue-50 rounded-md">
                       <div className="flex items-center justify-between">
                         <p className="text-sm text-blue-800">
@@ -284,7 +259,7 @@ export function ContextSettings({ chatId }: ContextSettingsProps) {
                         </Button>
                       </div>
                     </div>
-                  )}
+                  )} */}
                 </CardContent>
               </Card>
             )}
@@ -318,38 +293,12 @@ export function ContextSettings({ chatId }: ContextSettingsProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Context Viewer Dialog */}
-      <Dialog open={isContextViewerOpen} onOpenChange={setIsContextViewerOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Current Context Data
-            </DialogTitle>
-            <DialogDescription>
-              This is the context data that would be sent to the AI with your next /deepseek
-              command.
-              {contextData && (
-                <span className="block mt-1 text-sm font-medium">
-                  Estimated tokens: {contextData.tokenEstimate || 'Unknown'}
-                </span>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-
-          <ScrollArea className="h-[60vh] w-full">
-            <div className="p-4 bg-gray-50 rounded-md">
-              <pre className="text-sm whitespace-pre-wrap font-mono">
-                {formatContextForDisplay()}
-              </pre>
-            </div>
-          </ScrollArea>
-
-          <div className="flex justify-end pt-4 border-t">
-            <Button onClick={() => setIsContextViewerOpen(false)}>Close</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Context Viewer Component */}
+      <ContextViewer
+        chatId={chatId}
+        isOpen={isContextViewerOpen}
+        onOpenChange={setIsContextViewerOpen}
+      />
     </>
   );
 }

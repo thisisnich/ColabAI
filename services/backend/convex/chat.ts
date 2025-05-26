@@ -1012,6 +1012,8 @@ export const getContextMessages = query({
       messages: effectiveMessages,
       summary,
       tokenEstimate,
+      needsSummarization: messages.length > 20, // Example condition
+      totalMessageCount: messages.length,
     };
   },
 });

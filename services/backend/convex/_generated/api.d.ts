@@ -16,6 +16,7 @@ import type {
 import type * as appinfo from "../appinfo.js";
 import type * as auth from "../auth.js";
 import type * as chat from "../chat.js";
+import type * as chatSummarization from "../chatSummarization.js";
 import type * as cleanupTasks from "../cleanupTasks.js";
 import type * as commands from "../commands.js";
 import type * as crypto from "../crypto.js";
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   appinfo: typeof appinfo;
   auth: typeof auth;
   chat: typeof chat;
+  chatSummarization: typeof chatSummarization;
   cleanupTasks: typeof cleanupTasks;
   commands: typeof commands;
   crypto: typeof crypto;
