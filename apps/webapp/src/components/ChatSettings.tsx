@@ -1,10 +1,15 @@
-import { api } from '@workspace/backend/convex/_generated/api';
-import type { Id } from '@workspace/backend/convex/_generated/dataModel';
+// ============================================================================
+// ChatSettings.tsx - STANDARDIZED
+// ============================================================================
+
 import { useSessionMutation, useSessionQuery } from 'convex-helpers/react/sessions';
-import { ChevronDown, LogOut, Settings, Shield, UserMinus } from 'lucide-react';
+import { ChevronDown, LogOut, Settings, Shield, UserMinus, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { ChatInvite } from './ChatInvite';
+
+import { api } from '@workspace/backend/convex/_generated/api';
+import type { Id } from '@workspace/backend/convex/_generated/dataModel';
+
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
@@ -14,6 +19,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
+
+interface ChatSettingsProps {
+  chatId: Id<'chats'>;
+}
 
 interface UserCardProps {
   user: {
@@ -30,6 +39,9 @@ interface UserCardProps {
   onRemoveUser: (userId: Id<'users'>) => void;
 }
 
+// ========================================
+// Helper Functions
+// ========================================
 function getRoleBadgeVariant(role: string, isCreator: boolean) {
   if (isCreator) return 'default';
   switch (role) {
@@ -56,11 +68,13 @@ function getRoleDisplayName(role: string, isCreator: boolean) {
   }
 }
 
+// ========================================
+// UserCard Component
+// ========================================
 function UserCard({
   user,
   isCurrentUserAdmin,
   currentUserId,
-  chatId,
   onRoleChange,
   onRemoveUser,
 }: UserCardProps) {
@@ -125,18 +139,33 @@ function UserCard({
   );
 }
 
-interface ChatSettingsProps {
-  chatId: Id<'chats'>;
-}
-
+// ========================================
+// Main Component
+// ========================================
 export function ChatSettings({ chatId }: ChatSettingsProps) {
-  const [open, setOpen] = useState(false);
+  // ========================================
+  // State Management
+  // ========================================
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // ========================================
+  // Queries
+  // ========================================
   const chatSettingsData = useSessionQuery(api.settings.getChatSettingsData, { chatId });
+
+  // ========================================
+  // Mutations
+  // ========================================
   const updateMemberRole = useSessionMutation(api.settings.updateMemberRole);
   const removeMemberFromChat = useSessionMutation(api.settings.removeMemberFromChat);
   const leaveChat = useSessionMutation(api.settings.leaveChat);
 
+  // ========================================
+  // Event Handlers
+  // ========================================
   const handleRoleChange = async (userId: Id<'users'>, newRole: string) => {
+    setIsLoading(true);
     try {
       await updateMemberRole({
         chatId,
@@ -146,28 +175,31 @@ export function ChatSettings({ chatId }: ChatSettingsProps) {
       toast.success('Role updated successfully');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to update role');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleRemoveUser = async (userId: Id<'users'>) => {
+    setIsLoading(true);
     try {
-      const result = await removeMemberFromChat({
-        chatId,
-        userId,
-      });
+      const result = await removeMemberFromChat({ chatId, userId });
 
       if (result.chatDeleted) {
         toast.success('Chat was deleted as no members remained');
-        setOpen(false);
+        setIsOpen(false);
       } else {
         toast.success('User removed from chat');
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to remove user');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleLeaveChat = async () => {
+    setIsLoading(true);
     try {
       const result = await leaveChat({ chatId });
 
@@ -176,34 +208,42 @@ export function ChatSettings({ chatId }: ChatSettingsProps) {
       } else {
         toast.success('You left the chat');
       }
-      setOpen(false);
+      setIsOpen(false);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to leave chat');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // If data is loading or not available
+  // ========================================
+  // Early Returns
+  // ========================================
   if (!chatSettingsData) {
     return (
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" disabled>
+          <Button variant="ghost" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
-            <span className="sr-only">Chat Settings</span>
+            <span>Chat Settings</span>
           </Button>
-        </DialogTrigger>
+        </DialogTrigger>{' '}
       </Dialog>
     );
   }
 
+  // ========================================
+  // Main Render
+  // ========================================
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
+        <Button variant="ghost" className="flex items-center gap-2">
           <Settings className="h-4 w-4" />
-          <span className="sr-only">Chat Settings</span>
+          <span>Chat Settings</span>
         </Button>
       </DialogTrigger>
+
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Chat Settings</DialogTitle>
@@ -233,9 +273,10 @@ export function ChatSettings({ chatId }: ChatSettingsProps) {
               variant="outline"
               className="w-full text-destructive hover:text-destructive"
               onClick={handleLeaveChat}
+              disabled={isLoading}
             >
               <LogOut className="h-4 w-4 mr-2" />
-              Leave Chat
+              {isLoading ? 'Leaving...' : 'Leave Chat'}
             </Button>
           </div>
         </div>
