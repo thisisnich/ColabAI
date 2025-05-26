@@ -10,7 +10,8 @@ import {
   Users,
   Zap,
 } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 
 // Header Component
 const Header = () => {
@@ -99,7 +100,21 @@ const HeroSection = () => {
 };
 
 // Chat Message Component
-const ChatMessage = ({ message, isVisible }) => {
+// Define the message type
+interface Message {
+  user: string;
+  role: 'Creator' | 'Member' | string; // You can make this more specific if needed
+  timestamp: string;
+  message: string;
+}
+
+// Define the component props type
+interface ChatMessageProps {
+  message: Message;
+  isVisible: boolean;
+}
+
+const ChatMessage: React.FC<ChatMessageProps> = ({ message, isVisible }) => {
   return (
     <div
       className={`transition-all duration-500 ${
@@ -225,7 +240,20 @@ const DemoSection = () => {
 };
 
 // Feature Card Component
-const FeatureCard = ({ feature, index, isAnimated }) => {
+interface Feature {
+  icon: React.ComponentType<{ className?: string }>; // For icon components like Lucide React icons
+  title: string;
+  description: string;
+}
+
+// Define the component props type
+interface FeatureCardProps {
+  feature: Feature;
+  index: number;
+  isAnimated: boolean;
+}
+
+const FeatureCard: React.FC<FeatureCardProps> = ({ feature, index, isAnimated }) => {
   return (
     <div
       data-index={index}
@@ -243,11 +271,17 @@ const FeatureCard = ({ feature, index, isAnimated }) => {
   );
 };
 
-// Features Section Component
-const FeaturesSection = () => {
-  const [animatedCards, setAnimatedCards] = useState(new Set());
+// Define the feature type
+interface Feature {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+}
 
-  const features = [
+const FeaturesSection: React.FC = () => {
+  const [animatedCards, setAnimatedCards] = useState<Set<string>>(new Set());
+
+  const features: Feature[] = [
     {
       icon: Users,
       title: 'True Collaboration',
@@ -291,7 +325,11 @@ const FeaturesSection = () => {
       (entries) => {
         for (const entry of entries) {
           if (entry.isIntersecting) {
-            setAnimatedCards((prev) => new Set([...prev, entry.target.dataset.index]));
+            const element = entry.target as HTMLElement;
+            const index = element.dataset.index;
+            if (index) {
+              setAnimatedCards((prev) => new Set([...prev, index]));
+            }
           }
         }
       },
@@ -335,7 +373,21 @@ const FeaturesSection = () => {
 };
 
 // Pricing Plan Component
-const PricingPlan = ({ plan }) => {
+
+// Define the plan type
+interface Plan {
+  name: string;
+  price: string;
+  tokens: string;
+  popular: boolean;
+}
+
+// Define the component props type
+interface PricingPlanProps {
+  plan: Plan;
+}
+
+const PricingPlan: React.FC<PricingPlanProps> = ({ plan }) => {
   return (
     <div
       className={`relative bg-card border rounded-xl p-6 text-center transition-all duration-300 hover:scale-105 ${
@@ -370,7 +422,6 @@ const PricingPlan = ({ plan }) => {
   );
 };
 
-// Pricing Section Component
 const PricingSection = () => {
   const plans = [
     { name: 'Starter', price: '$0.99', tokens: '10K tokens', popular: false },
