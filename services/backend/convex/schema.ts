@@ -83,6 +83,20 @@ export default defineSchema({
     sessionId: v.optional(v.string()), // Session ID of the sender (optional)
   }).index('by_discussion', ['discussionKey']),
 
+  // Attendance-related tables
+  attendanceRecords: defineTable({
+    attendanceKey: v.string(), // The attendance session key (hardcoded)
+    timestamp: v.number(), // When the attendance was recorded
+    userId: v.optional(v.id('users')), // Optional user ID (for authenticated users)
+    name: v.optional(v.string()), // Name (required for anonymous users)
+    status: v.optional(v.union(v.literal('attending'), v.literal('not_attending'))), // Attendance status
+    reason: v.optional(v.string()), // Optional reason for not attending
+    remarks: v.optional(v.string()), // Optional remarks for attending
+  })
+    .index('by_attendance', ['attendanceKey'])
+    .index('by_name_attendance', ['attendanceKey', 'name'])
+    .index('by_user_attendance', ['attendanceKey', 'userId']),
+
   // auth
   users: defineTable(
     v.union(
@@ -192,4 +206,33 @@ export default defineSchema({
   })
     .index('by_chat', ['chatId'])
     .index('by_chat_version', ['chatId', 'version']),
+  betaApplications: defineTable({
+    email: v.string(),
+    fullName: v.string(),
+    company: v.optional(v.string()),
+    role: v.string(),
+    teamSize: v.string(),
+    useCase: v.string(),
+    expectedUsage: v.string(),
+    referralSource: v.optional(v.string()),
+    status: v.union(v.literal('pending'), v.literal('approved'), v.literal('rejected')),
+    betaCode: v.optional(v.string()),
+    appliedAt: v.number(),
+    reviewedAt: v.optional(v.number()),
+    notes: v.optional(v.string()),
+  })
+    .index('by_email', ['email'])
+    .index('by_status', ['status'])
+    .index('by_applied_date', ['appliedAt']),
+
+  betaCodes: defineTable({
+    code: v.string(),
+    email: v.string(),
+    isUsed: v.boolean(),
+    createdAt: v.number(),
+    usedAt: v.optional(v.number()),
+    expiresAt: v.optional(v.number()),
+  })
+    .index('by_code', ['code'])
+    .index('by_email', ['email']),
 });

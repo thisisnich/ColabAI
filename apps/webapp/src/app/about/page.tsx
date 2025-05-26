@@ -1,4 +1,5 @@
 'use client';
+import BetaApplicationForm from '@/components/BetaApplications'; // Adjust import path as needed
 import DemoSection from '@/components/about/DemoSection';
 import {
   BarChart3,
@@ -44,12 +45,9 @@ const Header = () => {
           </a>
         </div>
 
-        <button
-          type="button"
-          className="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-medium hover:bg-primary/90 transition-all duration-200 hover:scale-105"
-        >
-          Join Beta
-        </button>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <BetaApplicationForm />
+        </div>
       </nav>
     </header>
   );
@@ -419,12 +417,16 @@ const CTASection = () => {
         <p className="text-xl text-muted-foreground mb-10">
           Join the beta and be among the first teams to experience collaborative AI intelligence.
         </p>
-        <button
-          type="button"
-          className="bg-primary text-primary-foreground px-12 py-4 rounded-lg text-xl font-semibold hover:bg-primary/90 transition-all duration-200 hover:scale-105"
-        >
-          Join Beta Waitlist
-        </button>
+        <BetaApplicationForm />
+        <div className="mt-8">
+          {/* <button
+            type="button"
+            className="bg-primary text-primary-foreground px-8 py-4 rounded-lg font-semibold text-lg hover:bg-primary/90 transition-all duration-200 flex items-center space-x-2"
+          > */}
+          {/* <span>Join the Beta</span> */}
+          {/* <Share2 className="w-5 h-5" /> */}
+          {/* </button> */}
+        </div>
       </div>
     </section>
   );

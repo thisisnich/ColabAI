@@ -246,24 +246,8 @@ export const sendMessage = mutation({
           chatId: args.chatId,
           userId: user._id,
         });
-      }
-      if (command === 'deepseek') {
-        if (!commandArgs) {
-          await ctx.db.insert('messages', {
-            chatId: args.chatId,
-            userId: user._id,
-            content: 'Please provide a prompt. Usage: /deepseek [your question]',
-            timestamp: Date.now(),
-            type: 'system',
-          });
-          return messageId;
-        }
-
-        await ctx.scheduler.runAfter(0, internal.commands.getDeepSeekResponse, {
-          prompt: commandArgs,
-          chatId: args.chatId,
-          userId: user._id,
-        });
+      } else {
+        // Handle other commands as needed
       }
       if (command === 'deeptest') {
         await ctx.scheduler.runAfter(0, internal.commands.getDeepSeekResponse, {
@@ -274,47 +258,6 @@ export const sendMessage = mutation({
       }
     }
     return messageId;
-  },
-});
-
-export const sendChatbotMessage = internalMutation({
-  args: {
-    chatId: v.id('chats'),
-    content: v.string(),
-  },
-  handler: async (ctx, args) => {
-    // Get or create chatbot user (you might want to cache this ID)
-    let chatbotUser = await ctx.db
-      .query('users')
-      .withIndex('by_username', (q) => q.eq('username', 'deepseek-bot'))
-      .unique();
-
-    // Create chatbot user if it doesn't exist
-    if (!chatbotUser) {
-      const chatbotUserId = await ctx.db.insert('users', {
-        username: 'deepseek-bot',
-        name: 'DeepSeek AI',
-        type: 'chatbot', // Assuming you have a type field to distinguish user types
-        // add other required user fields as needed
-      });
-      chatbotUser = await ctx.db.get(chatbotUserId);
-    }
-
-    if (!chatbotUser) {
-      throw new Error('Could not create or find chatbot user');
-    }
-
-    await ctx.db.insert('messages', {
-      chatId: args.chatId,
-      userId: chatbotUser._id,
-      content: args.content,
-      timestamp: Date.now(),
-      type: 'chatbot',
-    });
-
-    await ctx.db.patch(args.chatId, {
-      updatedAt: Date.now(),
-    });
   },
 });
 export const verifyMembership = internalQuery({
