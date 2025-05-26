@@ -72,6 +72,12 @@ export default defineSchema({
         type: v.literal('anonymous'),
         name: v.string(), //system generated name
         recoveryCode: v.optional(v.string()),
+      }),
+      v.object({
+        type: v.literal('chatbot'),
+        name: v.string(),
+        username: v.string(), //system generated name
+        recoveryCode: v.optional(v.string()),
       })
     )
   )
@@ -132,4 +138,33 @@ export default defineSchema({
     createdAt: v.number(), // When the code was created
     expiresAt: v.number(), // When the code expires
   }).index('by_code', ['code']), // For looking up codes
+  betaApplications: defineTable({
+    email: v.string(),
+    fullName: v.string(),
+    company: v.optional(v.string()),
+    role: v.string(),
+    teamSize: v.string(),
+    useCase: v.string(),
+    expectedUsage: v.string(),
+    referralSource: v.optional(v.string()),
+    status: v.union(v.literal('pending'), v.literal('approved'), v.literal('rejected')),
+    betaCode: v.optional(v.string()),
+    appliedAt: v.number(),
+    reviewedAt: v.optional(v.number()),
+    notes: v.optional(v.string()),
+  })
+    .index('by_email', ['email'])
+    .index('by_status', ['status'])
+    .index('by_applied_date', ['appliedAt']),
+
+  betaCodes: defineTable({
+    code: v.string(),
+    email: v.string(),
+    isUsed: v.boolean(),
+    createdAt: v.number(),
+    usedAt: v.optional(v.number()),
+    expiresAt: v.optional(v.number()),
+  })
+    .index('by_code', ['code'])
+    .index('by_email', ['email']),
 });
