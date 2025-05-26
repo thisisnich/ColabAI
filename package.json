@@ -34,7 +34,8 @@
   },
   "dependencies": {
     "@radix-ui/react-tooltip": "^1.1.8",
-    "date-fns": "^4.1.0"
+    "date-fns": "^4.1.0",
+    "radix-ui": "^1.4.2"
   },
   "pnpm": {
     "onlyBuiltDependencies": ["@biomejs/biome", "esbuild", "nx", "sharp"]
