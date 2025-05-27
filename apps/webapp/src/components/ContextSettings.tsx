@@ -29,7 +29,6 @@ type ContextMode = 'none' | 'deepseek_only' | 'all_messages';
 const contextModeOptions = [
   {
     value: 'none',
-
     title: 'No Context',
     description: 'Each message is treated as a new conversation',
     tokenUsage: 'Minimal',
@@ -82,11 +81,13 @@ export function ContextSettings({ chatId }: ContextSettingsProps) {
   const initializeTokens = useSessionMutation(api.tokens.initializeUserTokensFromSession);
 
   console.log('Set Context Settings:', contextSettings);
+  console.log('Token Stats:', tokenStats);
 
   const [selectedMode, setSelectedMode] = useState<ContextMode>('deepseek_only');
   const [useSummaryContext, setUseSummaryContext] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializingTokens, setIsInitializingTokens] = useState(false);
+  const [initializationAttempted, setInitializationAttempted] = useState(false);
 
   // Update state when contextSettings loads
   useEffect(() => {
@@ -98,20 +99,29 @@ export function ContextSettings({ chatId }: ContextSettingsProps) {
 
   // Auto-initialize tokens if they don't exist
   useEffect(() => {
-    if (tokenStats === null && !isInitializingTokens) {
+    // Only attempt initialization if:
+    // 1. tokenStats has loaded and is explicitly null (not undefined)
+    // 2. We're not already initializing
+    // 3. We haven't already attempted initialization
+    if (tokenStats === null && !isInitializingTokens && !initializationAttempted) {
+      console.log('Token stats is null, initializing...');
       setIsInitializingTokens(true);
+      setInitializationAttempted(true);
+
       initializeTokens({})
         .then(() => {
           console.log('Token tracking initialized successfully');
         })
         .catch((error) => {
           console.error('Failed to initialize token tracking:', error);
+          // Reset attempt flag on error so user can retry
+          setInitializationAttempted(false);
         })
         .finally(() => {
           setIsInitializingTokens(false);
         });
     }
-  }, [tokenStats, initializeTokens, isInitializingTokens]);
+  }, [tokenStats, initializeTokens, isInitializingTokens, initializationAttempted]);
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -129,12 +139,25 @@ export function ContextSettings({ chatId }: ContextSettingsProps) {
     }
   };
 
+  const handleManualTokenInit = async () => {
+    setIsInitializingTokens(true);
+    try {
+      await initializeTokens({});
+      console.log('Manual token initialization successful');
+    } catch (error) {
+      console.error('Manual token initialization failed:', error);
+    } finally {
+      setIsInitializingTokens(false);
+    }
+  };
+
   const currentOption = contextModeOptions.find((opt) => opt.value === selectedMode);
   console.log(currentOption);
 
-  // Handle the case where tokenStats is null (not initialized) or still loading
+  // Determine token stats loading state
+  const isTokenStatsLoading = tokenStats === undefined;
+  const isTokenStatsNotInitialized = tokenStats === null;
   const availableTokens = tokenStats?.availableTokens || 0;
-  const isTokenStatsLoading = tokenStats === undefined || isInitializingTokens;
 
   return (
     <>
@@ -166,12 +189,35 @@ export function ContextSettings({ chatId }: ContextSettingsProps) {
                 </CardHeader>
                 <CardContent className="pt-0 space-y-2 text-sm">
                   <div className="flex justify-center items-center py-2">
-                    <span className="text-muted-foreground">
-                      {isInitializingTokens
-                        ? 'Initializing token tracking...'
-                        : 'Loading token stats...'}
-                    </span>
+                    <span className="text-muted-foreground">Loading token stats...</span>
                   </div>
+                </CardContent>
+              </Card>
+            ) : isTokenStatsNotInitialized ? (
+              <Card className="bg-orange-50 border-orange-200">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Info className="w-4 h-4" />
+                    Token Tracking Not Initialized
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0 space-y-3 text-sm">
+                  <p className="text-muted-foreground">
+                    Token tracking needs to be set up for your account.
+                  </p>
+                  {isInitializingTokens ? (
+                    <div className="flex justify-center items-center py-2">
+                      <span className="text-muted-foreground">Initializing token tracking...</span>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={handleManualTokenInit}
+                      size="sm"
+                      disabled={isInitializingTokens}
+                    >
+                      Initialize Token Tracking
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ) : (
@@ -292,8 +338,8 @@ export function ContextSettings({ chatId }: ContextSettingsProps) {
             {/* Warning for high usage modes */}
             {selectedMode === 'all_messages' &&
               !useSummaryContext &&
-              availableTokens < 5000 &&
-              !isTokenStatsLoading && (
+              tokenStats &&
+              availableTokens < 5000 && (
                 <Card className="border-orange-200 bg-orange-50">
                   <CardContent className="pt-4">
                     <div className="flex items-center gap-2 text-orange-800">

@@ -4,7 +4,8 @@ import { useSessionMutation, useSessionQuery } from 'convex-helpers/react/sessio
 import { useMutation, useQuery } from 'convex/react';
 import { AlertTriangle, Check, CreditCard, TrendingUp, Zap } from 'lucide-react';
 import type React from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
 // Type definitions for better type safety
 interface TokenStats {
   totalTokensUsed: number;
@@ -44,6 +45,8 @@ const TokenDashboard: React.FC = () => {
   const [isProcessingPurchase, setIsProcessingPurchase] = useState(false);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
+  const [initializationError, setInitializationError] = useState<string | null>(null);
 
   // Get user's token statistics from Convex
   const tokenStats = useSessionQuery(api.tokens.getUserTokenStats, { limit: 10 });
@@ -51,19 +54,45 @@ const TokenDashboard: React.FC = () => {
   // Mutation for adding purchased tokens
   const addPurchasedTokens = useSessionMutation(api.tokens.addPurchasedTokens);
 
+  // Mutation for initializing user tokens
+  const initializeUserTokens = useSessionMutation(api.tokens.initializeUserTokensFromSession);
+
+  // Auto-initialize tokens when getUserTokenStats returns null
+  useEffect(() => {
+    const handleInitialization = async () => {
+      // Only initialize if we get null (not undefined which means loading)
+      if (tokenStats === null && !isInitializing) {
+        setIsInitializing(true);
+        setInitializationError(null);
+
+        try {
+          await initializeUserTokens({});
+          // The query will automatically refetch and get the new data
+        } catch (error) {
+          console.error('Failed to initialize user tokens:', error);
+          setInitializationError(
+            error instanceof Error ? error.message : 'Failed to initialize tokens'
+          );
+        } finally {
+          setIsInitializing(false);
+        }
+      }
+    };
+
+    handleInitialization();
+  }, [tokenStats, initializeUserTokens, isInitializing]);
+
   // Token packages for purchase
   const tokenPackages: TokenPackage[] = [
     { tokens: 10000, price: 99, popular: false, id: 1 }, // $0.99 — Entry level
     { tokens: 50000, price: 249, popular: true, id: 2 }, // $2.49 — $0.000049/token
     { tokens: 100000, price: 399, popular: false, id: 3 }, // $3.99 — $0.000039/token
     { tokens: 250000, price: 699, popular: false, id: 4 }, // $6.99 — $0.000028/token
-
     { tokens: 500000, price: 1199, popular: false, id: 5 }, // $11.99 — $0.000024/token
     { tokens: 1000000, price: 1999, popular: true, id: 6 }, // $19.99 — $0.000019/token
-    // { tokens: 2500000, price: 3999, popular: false, id: 7 }, // $39.99 — $0.000015/token
   ];
 
-  // Loading state
+  // Loading state (undefined means still loading from Convex)
   if (tokenStats === undefined) {
     return (
       <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
@@ -75,12 +104,38 @@ const TokenDashboard: React.FC = () => {
     );
   }
 
-  // Handle case where user hasn't been initialized yet
-  if (!tokenStats) {
+  // Initializing state (null means needs initialization)
+  if (tokenStats === null || isInitializing) {
     return (
       <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
         <div className="text-center py-12">
-          <p className="text-gray-600">Initializing token tracking...</p>
+          {initializationError ? (
+            <div className="max-w-md mx-auto">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+                <h3 className="text-red-800 font-medium mb-2">Initialization Failed</h3>
+                <p className="text-red-700 text-sm mb-4">{initializationError}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInitializationError(null);
+                    setIsInitializing(false);
+                    // This will trigger the useEffect again
+                  }}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Retry Initialization
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" />
+              <p className="text-gray-600 mt-4">
+                {isInitializing ? 'Initializing token tracking...' : 'Setting up your account...'}
+              </p>
+            </>
+          )}
         </div>
       </div>
     );
@@ -288,9 +343,9 @@ const TokenDashboard: React.FC = () => {
           </div>
           <div className="p-6">
             <div className="grid grid-cols-1 gap-4">
-              {tokenPackages.map((pkg, index) => (
+              {tokenPackages.map((pkg) => (
                 <button
-                  key={pkg.id} // Use a unique identifier from your data
+                  key={pkg.id}
                   type="button"
                   className={`relative border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md text-left ${
                     pkg.popular
