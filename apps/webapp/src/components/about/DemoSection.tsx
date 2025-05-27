@@ -1,11 +1,10 @@
 import { Settings, Share2, Users } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-// Chat Message Component
-// Define the message type
 
+// Define the message type
 interface Message {
   user: string;
-  role: 'Creator' | 'Member' | string; // You can make this more specific if needed
+  role: 'Creator' | 'Member' | string;
   timestamp: string;
   message: string;
 }
@@ -31,10 +30,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isVisible }) => {
           <div
             className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
               isAI
-                ? 'bg-purple-100 text-purple-800'
+                ? 'bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400'
                 : message.role === 'Creator'
-                  ? 'bg-blue-100 text-blue-800'
-                  : 'bg-green-100 text-green-800'
+                  ? 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400'
+                  : 'bg-green-500/10 text-green-600 dark:bg-green-500/20 dark:text-green-400'
             }`}
           >
             {message.user.charAt(0)}
@@ -46,7 +45,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isVisible }) => {
         </div>
         <div
           className={`px-4 py-3 rounded-lg ${
-            isAI ? 'bg-purple-50 border border-purple-200' : 'bg-muted'
+            isAI
+              ? 'bg-purple-500/5 border border-purple-500/20 dark:bg-purple-500/10 dark:border-purple-500/30'
+              : 'bg-muted/50 border border-border/50'
           }`}
         >
           <p className="text-sm text-foreground leading-relaxed">{message.message}</p>
@@ -160,8 +161,8 @@ const DemoSection = () => {
           </p>
         </div>
 
-        <div className="bg-card rounded-xl border border-border overflow-hidden max-w-4xl mx-auto">
-          <div className="bg-card/80 px-6 py-4 border-b border-border flex items-center justify-between">
+        <div className="bg-card rounded-xl border border-border overflow-hidden max-w-4xl mx-auto shadow-lg">
+          <div className="bg-card/80 backdrop-blur-sm px-6 py-4 border-b border-border flex items-center justify-between">
             <div>
               <h3 className="font-semibold text-foreground">Marketing Campaign Brainstorm</h3>
               <p className="text-sm text-muted-foreground">3 members</p>
@@ -172,7 +173,10 @@ const DemoSection = () => {
             </div>
           </div>
 
-          <div ref={chatContainerRef} className="p-6 space-y-6 h-96 overflow-y-auto">
+          <div
+            ref={chatContainerRef}
+            className="p-6 space-y-6 h-96 overflow-y-auto bg-background/50"
+          >
             {chatMessages.map((msg, index) => (
               <ChatMessage
                 key={`${msg.user}-${msg.timestamp}`}
@@ -182,14 +186,17 @@ const DemoSection = () => {
             ))}
           </div>
 
-          <div className="border-t border-border p-4">
-            <div className="bg-input rounded-lg px-4 py-2 flex items-center space-x-2">
+          <div className="border-t border-border p-4 bg-card/50">
+            <div className="bg-input/50 backdrop-blur-sm rounded-lg px-4 py-2 flex items-center space-x-2 border border-border/50">
               <input
                 type="text"
                 placeholder="Add to the conversation..."
                 className="flex-1 bg-transparent text-foreground placeholder-muted-foreground border-none outline-none"
               />
-              <button type="button" className="text-primary hover:text-primary/80">
+              <button
+                type="button"
+                className="text-primary hover:text-primary/80 transition-colors"
+              >
                 <Share2 className="w-5 h-5" />
               </button>
             </div>

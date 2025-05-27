@@ -14,7 +14,7 @@
 - [ ] Integrate Stripe for payment processing
 
 ## 🔍 About Page
-- [ ] Fix Styling for BetaApplicationForm
+- [x] Fix Styling for BetaApplicationForm
 - [ ] Fix dark mode for about page
 - [ ] Set up auto email to me when applicant for beta
       
