@@ -240,15 +240,16 @@ export const getUserTokenStats = query({
     const user = await getAuthUser(ctx, args.sessionId);
     if (!user) throw new Error('You must be logged in');
 
-    const userTokens = await getUserTokensWithReset(ctx, user._id);
+    const isUserTokens = await getUserTokensWithReset(ctx, user._id);
 
-    if (!userTokens) {
+    if (!isUserTokens) {
       // Instead of inserting here, return null or throw
       const init = await initializeUserTokens;
+
       // throw new Error('Token tracking not initialized - please call initializeUserTokens first');
       // Or return null and handle it in your UI
     }
-
+    const userTokens = await getUserTokensWithReset(ctx, user._id);
     const recentUsage = await ctx.db
       .query('tokenUsageHistory')
       .withIndex('by_user_time', (q) => q.eq('userId', user._id))
