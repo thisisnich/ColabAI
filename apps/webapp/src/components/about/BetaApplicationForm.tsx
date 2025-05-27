@@ -16,17 +16,23 @@ interface FormData {
 }
 
 interface BetaApplicationFormProps {
+  // Props for when used as a standalone button
   buttonText?: string;
   buttonClassName?: string;
   icon?: React.ReactNode;
+  // Props for when controlled externally
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 export const BetaApplicationForm = ({
   buttonText = 'Join Beta',
   buttonClassName = 'bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors',
   icon,
+  isOpen: externalIsOpen,
+  onClose: externalOnClose,
 }: BetaApplicationFormProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     email: '',
@@ -42,6 +48,13 @@ export const BetaApplicationForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const submitApplication = useMutation(api.betaApplications.submitApplication);
+
+  // Use external state if provided, otherwise use internal state
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+  const setIsOpen =
+    externalOnClose !== undefined
+      ? (open: boolean) => !open && externalOnClose()
+      : setInternalIsOpen;
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -74,7 +87,30 @@ export const BetaApplicationForm = ({
   const nextStep = () => setStep(step + 1);
   const prevStep = () => setStep(step - 1);
 
-  if (!isOpen) {
+  const handleClose = () => {
+    setIsOpen(false);
+    // Reset form state when closing
+    setStep(1);
+    setResult(null);
+    setFormData({
+      email: '',
+      fullName: '',
+      company: '',
+      role: '',
+      teamSize: '',
+      useCase: '',
+      expectedUsage: '',
+      referralSource: '',
+    });
+  };
+
+  // If controlled externally and not open, render nothing
+  if (externalIsOpen !== undefined && !isOpen) {
+    return null;
+  }
+
+  // If not controlled externally and not open, render the button
+  if (externalIsOpen === undefined && !isOpen) {
     return (
       <button type="button" onClick={() => setIsOpen(true)} className={buttonClassName}>
         <span>{buttonText}</span>
@@ -94,7 +130,7 @@ export const BetaApplicationForm = ({
           </div>
           <button
             type="button"
-            onClick={() => setIsOpen(false)}
+            onClick={handleClose}
             className="text-gray-400 hover:text-gray-600 text-xl font-bold"
           >
             ×
@@ -318,7 +354,7 @@ export const BetaApplicationForm = ({
 
               <button
                 type="button"
-                onClick={() => setIsOpen(false)}
+                onClick={handleClose}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
               >
                 Close
