@@ -1,8 +1,8 @@
-'use client';
 import { api } from '@workspace/backend/convex/_generated/api';
 import { useMutation } from 'convex/react';
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 
 interface FormData {
   email: string;
@@ -15,7 +15,17 @@ interface FormData {
   referralSource: string;
 }
 
-const BetaApplicationForm = () => {
+interface BetaApplicationFormProps {
+  buttonText?: string;
+  buttonClassName?: string;
+  icon?: React.ReactNode;
+}
+
+export const BetaApplicationForm = ({
+  buttonText = 'Join Beta',
+  buttonClassName = 'bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors',
+  icon,
+}: BetaApplicationFormProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
@@ -66,12 +76,9 @@ const BetaApplicationForm = () => {
 
   if (!isOpen) {
     return (
-      <button
-        type="button"
-        onClick={() => setIsOpen(true)}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
-      >
-        Join Beta
+      <button type="button" onClick={() => setIsOpen(true)} className={buttonClassName}>
+        <span>{buttonText}</span>
+        {icon && icon}
       </button>
     );
   }

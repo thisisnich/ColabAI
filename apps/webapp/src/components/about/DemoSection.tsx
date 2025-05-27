@@ -1,5 +1,7 @@
 import { Settings, Share2, Users } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+// Chat Message Component
+// Define the message type
 
 interface Message {
   user: string;
