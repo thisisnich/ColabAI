@@ -78,11 +78,15 @@ export function ContextSettings({ chatId }: ContextSettingsProps) {
   // Get user's token stats to show current usage
   const tokenStats = useSessionQuery(api.tokens.getUserTokenStats, { limit: 5 });
 
+  // Initialize tokens mutation
+  const initializeTokens = useSessionMutation(api.tokens.initializeUserTokensFromSession);
+
   console.log('Set Context Settings:', contextSettings);
 
   const [selectedMode, setSelectedMode] = useState<ContextMode>('deepseek_only');
   const [useSummaryContext, setUseSummaryContext] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializingTokens, setIsInitializingTokens] = useState(false);
 
   // Update state when contextSettings loads
   useEffect(() => {
@@ -91,6 +95,24 @@ export function ContextSettings({ chatId }: ContextSettingsProps) {
       setUseSummaryContext(contextSettings.useSummaryContext || false);
     }
   }, [contextSettings]);
+
+  // Auto-initialize tokens if they don't exist
+  useEffect(() => {
+    if (tokenStats === null && !isInitializingTokens) {
+      setIsInitializingTokens(true);
+      initializeTokens({})
+        .then(() => {
+          console.log('Token tracking initialized successfully');
+        })
+        .catch((error) => {
+          console.error('Failed to initialize token tracking:', error);
+        })
+        .finally(() => {
+          setIsInitializingTokens(false);
+        });
+    }
+  }, [tokenStats, initializeTokens, isInitializingTokens]);
+
   const handleSave = async () => {
     setIsLoading(true);
     try {
@@ -110,7 +132,9 @@ export function ContextSettings({ chatId }: ContextSettingsProps) {
   const currentOption = contextModeOptions.find((opt) => opt.value === selectedMode);
   console.log(currentOption);
 
+  // Handle the case where tokenStats is null (not initialized) or still loading
   const availableTokens = tokenStats?.availableTokens || 0;
+  const isTokenStatsLoading = tokenStats === undefined || isInitializingTokens;
 
   return (
     <>
@@ -132,27 +156,47 @@ export function ContextSettings({ chatId }: ContextSettingsProps) {
 
           <div className="space-y-6">
             {/* Token Usage Info */}
-            {tokenStats && (
+            {isTokenStatsLoading ? (
               <Card className="bg-blue-50 border-blue-200">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
                     <Info className="w-4 h-4" />
-                    Current Token Usage
+                    Token Usage
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0 space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Available tokens:</span>
-                    <Badge variant={availableTokens > 1000 ? 'default' : 'destructive'}>
-                      {availableTokens.toLocaleString()}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Used this month:</span>
-                    <span>{tokenStats.monthlyTokensUsed.toLocaleString()}</span>
+                  <div className="flex justify-center items-center py-2">
+                    <span className="text-muted-foreground">
+                      {isInitializingTokens
+                        ? 'Initializing token tracking...'
+                        : 'Loading token stats...'}
+                    </span>
                   </div>
                 </CardContent>
               </Card>
+            ) : (
+              tokenStats && (
+                <Card className="bg-blue-50 border-blue-200">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <Info className="w-4 h-4" />
+                      Current Token Usage
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0 space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Available tokens:</span>
+                      <Badge variant={availableTokens > 1000 ? 'default' : 'destructive'}>
+                        {availableTokens.toLocaleString()}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Used this month:</span>
+                      <span>{tokenStats.monthlyTokensUsed.toLocaleString()}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
             )}
 
             {/* Context Mode Selection */}
@@ -241,51 +285,35 @@ export function ContextSettings({ chatId }: ContextSettingsProps) {
                       onCheckedChange={setUseSummaryContext}
                     />
                   </div>
-                  {/* {useSummaryContext && (
-                    <div className="mt-3 p-3 bg-blue-50 rounded-md">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-blue-800">
-                          When enabled, older messages will be automatically summarized to save
-                          tokens while preserving important context information.
-                        </p>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setIsContextViewerOpen(true)}
-                          className="ml-2 flex-shrink-0"
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          View Context
-                        </Button>
-                      </div>
-                    </div>
-                  )} */}
                 </CardContent>
               </Card>
             )}
 
             {/* Warning for high usage modes */}
-            {selectedMode === 'all_messages' && !useSummaryContext && availableTokens < 5000 && (
-              <Card className="border-orange-200 bg-orange-50">
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-2 text-orange-800">
-                    <Info className="w-4 h-4" />
-                    <span className="text-sm font-medium">Token Usage Warning</span>
-                  </div>
-                  <p className="text-sm text-orange-700 mt-1">
-                    "All Messages" mode uses significantly more tokens. Consider enabling Smart
-                    Context Summarization or purchasing additional tokens.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
+            {selectedMode === 'all_messages' &&
+              !useSummaryContext &&
+              availableTokens < 5000 &&
+              !isTokenStatsLoading && (
+                <Card className="border-orange-200 bg-orange-50">
+                  <CardContent className="pt-4">
+                    <div className="flex items-center gap-2 text-orange-800">
+                      <Info className="w-4 h-4" />
+                      <span className="text-sm font-medium">Token Usage Warning</span>
+                    </div>
+                    <p className="text-sm text-orange-700 mt-1">
+                      "All Messages" mode uses significantly more tokens. Consider enabling Smart
+                      Context Summarization or purchasing additional tokens.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
 
             {/* Action Buttons */}
             <div className="flex justify-end gap-2 pt-4 border-t">
               <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isLoading}>
                 Cancel
               </Button>
-              <Button onClick={handleSave} disabled={isLoading}>
+              <Button onClick={handleSave} disabled={isLoading || isInitializingTokens}>
                 {isLoading ? 'Saving...' : 'Save Settings'}
               </Button>
             </div>

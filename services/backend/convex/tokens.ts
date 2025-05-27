@@ -40,6 +40,43 @@ export const initializeUserTokens = mutation({
   },
 });
 
+// NEW: Initialize token tracking for authenticated user (session-based)
+export const initializeUserTokensFromSession = mutation({
+  args: {
+    monthlyLimit: v.optional(v.number()),
+    ...SessionIdArg,
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx, args.sessionId);
+    if (!user) {
+      throw new Error('You must be logged in to initialize token tracking');
+    }
+
+    const existing = await ctx.db
+      .query('userTokens')
+      .withIndex('by_user', (q) => q.eq('userId', user._id))
+      .unique();
+
+    if (existing) {
+      return existing._id;
+    }
+
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    return await ctx.db.insert('userTokens', {
+      userId: user._id,
+      totalTokensUsed: 0,
+      monthlyTokensUsed: 0,
+      monthlyLimit: args.monthlyLimit ?? DEFAULT_MONTHLY_LIMIT,
+      purchasedTokens: 0,
+      lastResetDate: currentMonth,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+  },
+});
+
 // Check if user has enough tokens for a request
 export const checkTokenLimit = internalQuery({
   args: {
@@ -227,10 +264,7 @@ export const addPurchasedTokens = mutation({
   },
 });
 
-// Get user's token usage statistics
-// Mutation to initialize tokens
-
-// Updated query (read-only)
+// FIXED: Get user's token usage statistics - now returns null when not initialized
 export const getUserTokenStats = query({
   args: {
     limit: v.optional(v.number()),
@@ -240,16 +274,13 @@ export const getUserTokenStats = query({
     const user = await getAuthUser(ctx, args.sessionId);
     if (!user) throw new Error('You must be logged in');
 
-    const isUserTokens = await getUserTokensWithReset(ctx, user._id);
-
-    if (!isUserTokens) {
-      // Instead of inserting here, return null or throw
-      const init = await initializeUserTokens;
-
-      // throw new Error('Token tracking not initialized - please call initializeUserTokens first');
-      // Or return null and handle it in your UI
-    }
     const userTokens = await getUserTokensWithReset(ctx, user._id);
+
+    // If user tokens don't exist, return null to indicate initialization is needed
+    if (!userTokens) {
+      return null;
+    }
+
     const recentUsage = await ctx.db
       .query('tokenUsageHistory')
       .withIndex('by_user_time', (q) => q.eq('userId', user._id))
@@ -273,9 +304,11 @@ export const getUserTokenStats = query({
       lastResetDate: userTokens.lastResetDate,
       recentUsage,
       monthlyPurchases,
+      needsInitialization: false,
     };
   },
 });
+
 // Helper functions
 async function getUserTokensWithReset(ctx: any, userId: Id<'users'>) {
   const userTokens = await ctx.db
