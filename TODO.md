@@ -1,5 +1,8 @@
 # TODO List
 
+### ⚠️ IMPORTANT 
+- [ ] Fix userToken initializatin
+- [ ] after closing context view, cant clikc anyth else.
 ## 🧠 AI Context
 - [x] Fix AI context settings (currently not functioning)
 - [x] Set up AI context summary for better context-awareness
