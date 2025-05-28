@@ -11,7 +11,7 @@
 ## 💰 Billing
 - [x] Fix token pricing logic
 - [ ] Update API pricing
-- [ ] Fix ui overflowoing
+- [x] Fix ui overflowing
 - [ ] correct monthly usage to show percentage of used
 
 ## 🔐 Authentication
