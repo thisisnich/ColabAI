@@ -10,11 +10,11 @@
 // 6. Consistent button and action patterns
 
 // ============================================================================
-// ChatView.tsx - STANDARDIZED
+// ChatView.tsx - STANDARDIZED WITH MessageInput
 // ============================================================================
 
 import { useSessionMutation, useSessionQuery } from 'convex-helpers/react/sessions';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { api } from '@workspace/backend/convex/_generated/api';
 import type { Id } from '@workspace/backend/convex/_generated/dataModel';
@@ -24,6 +24,7 @@ import { ChatSettings } from './ChatSettings';
 import { ContextSettings } from './ContextSettings';
 import { ContextViewer } from './ContextViewer';
 import { FormattedMessageDisplay } from './MessageDisplay';
+import { MessageInput } from './MessageInput';
 
 import { Button } from './ui/button';
 import {
@@ -33,7 +34,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
-import { Input } from './ui/input';
 import { Skeleton } from './ui/skeleton';
 
 interface ChatViewProps {
@@ -44,11 +44,6 @@ interface ChatViewProps {
 }
 
 export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: ChatViewProps) {
-  // ========================================
-  // State Management
-  // ========================================
-  const [message, setMessage] = useState('');
-
   // ========================================
   // Refs
   // ========================================
@@ -80,15 +75,14 @@ export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: Cha
   // ========================================
   // Event Handlers
   // ========================================
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!message.trim() || !canSendMessages) return;
+  const handleSendMessage = async (content: string) => {
+    if (!content.trim() || !canSendMessages) return;
 
     try {
-      await sendMessage({ chatId, content: message });
-      setMessage('');
+      await sendMessage({ chatId, content });
     } catch (error) {
       console.error('Failed to send message:', error);
+      throw error; // Re-throw to let MessageInput handle the error state
     }
   };
 
@@ -210,19 +204,10 @@ export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: Cha
 
       {/* Message Input */}
       {canSendMessages ? (
-        <form onSubmit={handleSendMessage} className="border-t p-3">
-          <div className="flex gap-2">
-            <Input
-              placeholder="Type a message..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="flex-1"
-            />
-            <Button type="submit" disabled={!message.trim()}>
-              Send
-            </Button>
-          </div>
-        </form>
+        <MessageInput
+          onSendMessage={handleSendMessage}
+          placeholder="Type a message... (Shift+Enter for new line)"
+        />
       ) : (
         <div className="border-t p-3 bg-muted/50">
           <div className="text-center text-sm text-muted-foreground py-2">

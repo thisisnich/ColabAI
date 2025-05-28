@@ -11,8 +11,9 @@
 - [ ] Optimize summarization
 
 ## 💬 Chat
-- [ ] change to component for input
-- [ ] Resize input
+- [x] change to component for input
+- [x] Resize input
+- [x] md styling
 - [ ] accept files
 
 

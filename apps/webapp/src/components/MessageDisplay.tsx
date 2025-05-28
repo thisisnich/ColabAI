@@ -7,7 +7,7 @@ interface Message {
   chatId: Id<'chats'>;
   content: string;
   timestamp: number;
-  type: string; // Changed from union type to string
+  type: string;
   sender: {
     id: Id<'users'>;
     name: string;
@@ -15,7 +15,7 @@ interface Message {
 }
 
 interface MemberRole {
-  userId: Id<'users'>; // Changed from string to Id<'users'>
+  userId: Id<'users'>;
   role: string;
   isCreator: boolean;
 }
@@ -23,8 +23,8 @@ interface MemberRole {
 interface FormattedMessageDisplayProps {
   messages: Message[];
   currentUserId: string;
-  memberRoles?: MemberRole[] | null; // Added null to the union type
-  messagesEndRef: React.RefObject<HTMLDivElement | null>; // Added null to the union type
+  memberRoles?: MemberRole[] | null;
+  messagesEndRef: React.RefObject<HTMLDivElement | null>;
 }
 
 // Helper function to get role badge variant
@@ -34,7 +34,7 @@ const getRoleBadgeVariant = (role: string, isCreator: boolean) => {
     case 'admin':
       return 'destructive';
     case 'moderator':
-    case 'contributor': // Added contributor case
+    case 'contributor':
       return 'secondary';
     case 'viewer':
       return 'outline';
@@ -49,12 +49,82 @@ const getRoleDisplayName = (role: string, isCreator: boolean) => {
   return role.charAt(0).toUpperCase() + role.slice(1);
 };
 
-// Component to render formatted message content
-const MessageContent = ({ content, isAI = false }: { content: string; isAI?: boolean }) => {
-  if (!isAI) {
+// Helper function to format inline text (bold, italic, code, links, etc.)
+const formatInlineText = (text: string): React.ReactNode => {
+  if (!text) return null;
+
+  // Split by various inline formatting patterns
+  const parts = text.split(/(\*\*[^*]*\*\*|\*[^*]*\*|`[^`]*`|\[[^\]]*\]\([^)]*\))/);
+
+  return parts.map((part, index) => {
+    const partKey = `${index}-${part.substring(0, 10)}-${part.length}`;
+
+    // Bold text
+    if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+      return (
+        <strong key={partKey} className="font-semibold">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+
+    // Italic text
+    if (part.startsWith('*') && part.endsWith('*') && part.length > 2 && !part.startsWith('**')) {
+      return (
+        <em key={partKey} className="italic">
+          {part.slice(1, -1)}
+        </em>
+      );
+    }
+
+    // Inline code
+    if (part.startsWith('`') && part.endsWith('`') && part.length > 2) {
+      return (
+        <code
+          key={partKey}
+          className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm font-mono"
+        >
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+
+    // Links
+    const linkMatch = part.match(/\[([^\]]*)\]\(([^)]*)\)/);
+    if (linkMatch) {
+      return (
+        <a
+          key={partKey}
+          href={linkMatch[2]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline"
+        >
+          {linkMatch[1]}
+        </a>
+      );
+    }
+
+    return part;
+  });
+};
+
+// EXPORTED: Component to render formatted message content
+export const MessageContent = ({
+  content,
+  isAI = false,
+  enableFormatting = true,
+}: {
+  content: string;
+  isAI?: boolean;
+  enableFormatting?: boolean;
+}) => {
+  // If formatting is disabled, return plain text
+  if (!enableFormatting) {
     return <p className="break-words whitespace-pre-wrap">{content}</p>;
   }
 
+  // For both AI and user messages, apply markdown formatting
   // Split content by lines to handle different formatting elements
   const lines = content.split('\n');
   const elements: React.ReactNode[] = [];
@@ -68,7 +138,9 @@ const MessageContent = ({ content, isAI = false }: { content: string; isAI?: boo
       if (text.trim()) {
         elements.push(
           <div key={elements.length} className="mb-2 last:mb-0">
-            {formatInlineText(text)}
+            <p className="break-words whitespace-pre-wrap leading-relaxed">
+              {formatInlineText(text)}
+            </p>
           </div>
         );
       }
@@ -104,7 +176,7 @@ const MessageContent = ({ content, isAI = false }: { content: string; isAI?: boo
       if (i === lines.length - 1 || lines[i + 1]?.startsWith('```')) {
         elements.push(
           <div key={elements.length} className="mb-3">
-            <pre className="bg-gray-100 rounded-md p-3 text-sm overflow-x-auto">
+            <pre className="bg-gray-100 dark:bg-gray-800 rounded-md p-3 text-sm overflow-x-auto">
               <code className={codeBlockLanguage ? `language-${codeBlockLanguage}` : ''}>
                 {currentElement.join('\n')}
               </code>
@@ -150,7 +222,9 @@ const MessageContent = ({ content, isAI = false }: { content: string; isAI?: boo
     // Handle horizontal rules
     if (line.trim() === '---' || line.trim() === '***') {
       flushCurrentElement();
-      elements.push(<hr key={elements.length} className="my-4 border-gray-300" />);
+      elements.push(
+        <hr key={elements.length} className="my-4 border-gray-300 dark:border-gray-600" />
+      );
       continue;
     }
 
@@ -180,10 +254,10 @@ const MessageContent = ({ content, isAI = false }: { content: string; isAI?: boo
           key={elements.length}
           className={`mb-3 ${isOrdered ? 'list-decimal' : 'list-disc'} list-inside space-y-1`}
         >
-          {listItems.map((item) => {
+          {listItems.map((item, itemIndex) => {
             const cleanItem = item.replace(/^\s*[-*+]\s/, '').replace(/^\s*\d+\.\s/, '');
             return (
-              <li key={`${elements.length}-${cleanItem.substring(0, 20)}`} className="break-words">
+              <li key={`${elements.length}-${itemIndex}`} className="break-words">
                 {formatInlineText(cleanItem)}
               </li>
             );
@@ -196,12 +270,28 @@ const MessageContent = ({ content, isAI = false }: { content: string; isAI?: boo
     // Handle blockquotes
     if (line.startsWith('> ')) {
       flushCurrentElement();
+      // Collect multiple consecutive blockquote lines
+      const blockquoteLines = [line.substring(2)];
+      let j = i + 1;
+      while (j < lines.length && lines[j].startsWith('> ')) {
+        blockquoteLines.push(lines[j].substring(2));
+        j++;
+      }
+      i = j - 1; // Skip processed lines
+
       elements.push(
         <blockquote
-          key={elements.length}
-          className="border-l-4 border-gray-300 pl-4 italic text-gray-600 mb-3"
+          key={`blockquote-${elements.length}`} // Better key using a prefix
+          className="border-l-4 border-gray-300 dark:border-gray-600 pl-4 italic text-gray-600 dark:text-gray-400 mb-3 bg-gray-50 dark:bg-gray-800/50 py-2 rounded-r"
         >
-          {formatInlineText(line.substring(2))}
+          {blockquoteLines.map((quoteLine) => (
+            <p
+              key={`quote-line-${quoteLine.substring(0, 10)}-${Math.random().toString(36).substring(2, 8)}`} // Creates a more unique key
+              className="break-words whitespace-pre-wrap leading-relaxed"
+            >
+              {formatInlineText(quoteLine)}
+            </p>
+          ))}
         </blockquote>
       );
       continue;
@@ -214,63 +304,6 @@ const MessageContent = ({ content, isAI = false }: { content: string; isAI?: boo
   flushCurrentElement();
 
   return <div className="space-y-0">{elements}</div>;
-};
-
-// Helper function to format inline text (bold, italic, code, links, etc.)
-const formatInlineText = (text: string): React.ReactNode => {
-  if (!text) return null;
-
-  // Split by various inline formatting patterns
-  const parts = text.split(/(\*\*[^*]*\*\*|\*[^*]*\*|`[^`]*`|\[[^\]]*\]\([^)]*\))/);
-
-  return parts.map((part) => {
-    const partKey = `${part.substring(0, 10)}-${part.length}`;
-
-    // Bold text
-    if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
-      return (
-        <strong key={partKey} className="font-semibold">
-          {part.slice(2, -2)}
-        </strong>
-      );
-    }
-
-    // Italic text
-    if (part.startsWith('*') && part.endsWith('*') && part.length > 2 && !part.startsWith('**')) {
-      return (
-        <em key={partKey} className="italic">
-          {part.slice(1, -1)}
-        </em>
-      );
-    }
-
-    // Inline code
-    if (part.startsWith('`') && part.endsWith('`') && part.length > 2) {
-      return (
-        <code key={partKey} className="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono">
-          {part.slice(1, -1)}
-        </code>
-      );
-    }
-
-    // Links
-    const linkMatch = part.match(/\[([^\]]*)\]\(([^)]*)\)/);
-    if (linkMatch) {
-      return (
-        <a
-          key={partKey}
-          href={linkMatch[2]}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-500 hover:text-blue-700 underline"
-        >
-          {linkMatch[1]}
-        </a>
-      );
-    }
-
-    return part;
-  });
 };
 
 export function FormattedMessageDisplay({
@@ -301,8 +334,8 @@ export function FormattedMessageDisplay({
                   : isSelfMessage
                     ? 'bg-blue-500 text-white ml-auto'
                     : isAIMessage
-                      ? 'bg-gray-50 border border-gray-200 text-gray-800 mr-auto'
-                      : 'bg-gray-200 text-gray-800 mr-auto'
+                      ? 'bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 mr-auto'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 mr-auto'
               }`}
             >
               {!isSystemMessage && (
@@ -311,8 +344,8 @@ export function FormattedMessageDisplay({
                     isSelfMessage
                       ? 'text-blue-100 border-blue-400'
                       : isAIMessage
-                        ? 'text-gray-600 border-gray-200'
-                        : 'text-gray-600 border-gray-300'
+                        ? 'text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-600'
+                        : 'text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600'
                   }`}
                 >
                   <p className="font-medium text-sm">{isSelfMessage ? 'Me' : msg.sender.name}</p>
@@ -327,8 +360,8 @@ export function FormattedMessageDisplay({
                   )}
                 </div>
               )}
-              <div className={isAIMessage ? 'prose prose-sm max-w-200' : ''}>
-                <MessageContent content={msg.content} isAI={isAIMessage} />
+              <div>
+                <MessageContent content={msg.content} isAI={isAIMessage} enableFormatting={true} />
               </div>
             </div>
           </div>
