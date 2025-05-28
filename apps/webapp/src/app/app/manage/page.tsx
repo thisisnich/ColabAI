@@ -84,12 +84,12 @@ const TokenDashboard: React.FC = () => {
 
   // Token packages for purchase
   const tokenPackages: TokenPackage[] = [
-    { tokens: 10000, price: 99, popular: false, id: 1 }, // $0.99 — Entry level
-    { tokens: 50000, price: 249, popular: true, id: 2 }, // $2.49 — $0.000049/token
-    { tokens: 100000, price: 399, popular: false, id: 3 }, // $3.99 — $0.000039/token
-    { tokens: 250000, price: 699, popular: false, id: 4 }, // $6.99 — $0.000028/token
-    { tokens: 500000, price: 1199, popular: false, id: 5 }, // $11.99 — $0.000024/token
-    { tokens: 1000000, price: 1999, popular: true, id: 6 }, // $19.99 — $0.000019/token
+    { tokens: 100000, price: 99, popular: false, id: 1 }, // $0.99 — Entry level
+    { tokens: 500000, price: 349, popular: true, id: 2 }, // $2.49 — $0.000049/token
+    { tokens: 1200000, price: 649, popular: false, id: 3 }, // $3.99 — $0.000039/token
+    { tokens: 2500000, price: 1099, popular: false, id: 4 }, // $6.99 — $0.000028/token
+    { tokens: 5000000, price: 1549, popular: false, id: 5 }, // $11.99 — $0.000024/token
+    { tokens: 7500000, price: 1999, popular: true, id: 6 }, // $19.99 — $0.000019/token
   ];
 
   // Loading state (undefined means still loading from Convex)
