@@ -1,3 +1,4 @@
+import { Eye, EyeOff, FileIcon, Loader, Send } from 'lucide-react'; // Import the Send icon from Lucide
 import { useEffect, useRef, useState } from 'react';
 import { MessageContent } from './MessageDisplay';
 import { Button } from './ui/button';
@@ -95,87 +96,83 @@ export function MessageInput({
   // Main Render
   // ========================================
   return (
-    <form
-      onSubmit={handleSendMessage}
-      className={`border-t border-gray-200 dark:border-gray-700 ${className}`}
-    >
-      <div className="p-3 space-y-2">
-        {/* Preview/Edit Toggle */}
-        {hasContent && hasMarkdown && (
-          <div className="flex justify-between items-center">
-            <div className="text-xs text-muted-foreground">
-              {isMultiline && !isPreviewMode && (
-                <span>Press Shift+Enter for new line, Enter to send</span>
-              )}
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={togglePreview}
-              className="text-xs h-6 px-2"
-            >
-              {isPreviewMode ? 'Edit' : 'Preview'}
-            </Button>
-          </div>
-        )}
+    <>
+      <form
+        onSubmit={handleSendMessage}
+        className={`border-t border-gray-200 dark:border-gray-700 ${className}`}
+      >
+        {/* Main Input Row */}
+        <div className="flex items-end gap-2 p-3">
+          {/* File Upload - Far Left */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 flex-shrink-0"
+            title="Attach File"
+          >
+            <FileIcon className="h-4 w-4" />
+          </Button>
 
-        {/* Input/Preview Area */}
-        <div className="relative">
-          {isPreviewMode ? (
-            <div className="min-h-[2.5rem] p-3 border rounded-md bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <MessageContent content={message} isAI={false} enableFormatting={true} />
-            </div>
-          ) : (
-            <textarea
-              ref={textareaRef}
-              placeholder={placeholder}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={disabled || isSending}
-              className="w-full min-h-[2.5rem] max-h-[200px] resize-none border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-              rows={1}
-            />
-          )}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex justify-between items-center">
-          <div className="text-xs text-muted-foreground">
-            {!isMultiline && hasContent && !isPreviewMode && (
-              <span>Press Shift+Enter for new line</span>
+          {/* Message Input/Preview Area - Center */}
+          <div className="flex-1">
+            {isPreviewMode ? (
+              <div className="w-full min-h-[2.5rem] p-3 border rounded-md bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                <MessageContent content={message} isAI={false} enableFormatting={true} />
+              </div>
+            ) : (
+              <textarea
+                ref={textareaRef}
+                placeholder={placeholder}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={disabled || isSending}
+                className="w-full min-h-[2.5rem] max-h-[200px] resize-none border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                rows={1}
+              />
             )}
           </div>
 
-          <div className="flex gap-2">
-            {isPreviewMode && (
+          {/* Action Icons - Right Side */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {/* Preview Toggle */}
+            {hasContent && hasMarkdown && (
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={togglePreview}
-                disabled={isSending}
+                className="h-8 w-8 p-0"
+                title={isPreviewMode ? 'Exit Preview' : 'Preview'}
               >
-                Edit
+                {isPreviewMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
             )}
-            <Button type="submit" disabled={!hasContent || disabled || isSending} size="sm">
-              {isSending ? 'Sending...' : 'Send'}
+
+            {/* Send Button */}
+            <Button
+              type="submit"
+              disabled={!hasContent || disabled || isSending}
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              title="Send Message"
+            >
+              {isSending ? <Loader className="h-4 w-4" /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
         </div>
 
-        {/* Help Text */}
-        {hasContent && !isPreviewMode && (
-          <div className="text-xs text-muted-foreground space-y-1">
-            <div>Supports Markdown: **bold**, *italic*, `code`, &gt; quotes, - lists</div>
-            {isMultiline && (
-              <div className="text-blue-600 dark:text-blue-400">Multi-line message detected</div>
-            )}
+        {/* Help Text - Below the input row */}
+        {hasContent && hasMarkdown && isMultiline && !isPreviewMode && (
+          <div className="px-3 pb-2">
+            <div className="text-xs text-muted-foreground">
+              Press Shift+Enter for new line, Enter to send
+            </div>
           </div>
         )}
-      </div>
-    </form>
+      </form>
+    </>
   );
 }
