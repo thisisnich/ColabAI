@@ -8,11 +8,18 @@
 - [x] Set up AI context summary for better context-awareness
 - [ ] Optimize summarization
 
-## 💰 Billing
+## 💬 Chat
+- [ ] change to component for input
+- [ ] Resize input
+- [ ] accept files
+
+
+## 💰 Manage
 - [x] Fix token pricing logic
 - [ ] Update API pricing
 - [x] Fix ui overflowing
 - [ ] correct monthly usage to show percentage of used
+- [ ] move api buy above usage
 
 ## 🔐 Authentication
 - [ ] Set up authentication (Google OAuth preferred)
@@ -23,5 +30,6 @@
 ## 🔍 About Page
 - [x] Fix Styling for BetaApplicationForm
 - [x] Fix dark mode for about page
+- [ ] Standardize darkmode
 - [ ] Set up auto email to me when applicant for beta
       
