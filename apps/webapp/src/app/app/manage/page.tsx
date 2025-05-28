@@ -95,10 +95,10 @@ const TokenDashboard: React.FC = () => {
   // Loading state (undefined means still loading from Convex)
   if (tokenStats === undefined) {
     return (
-      <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
+      <div className="max-w-6xl mx-auto p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
         <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" />
-          <p className="text-gray-600 mt-4">Loading token statistics...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mx-auto" />
+          <p className="text-gray-600 dark:text-gray-400 mt-4">Loading token statistics...</p>
         </div>
       </div>
     );
@@ -107,14 +107,16 @@ const TokenDashboard: React.FC = () => {
   // Initializing state (null means needs initialization)
   if (tokenStats === null || isInitializing) {
     return (
-      <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
+      <div className="max-w-6xl mx-auto p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
         <div className="text-center py-12">
           {initializationError ? (
             <div className="max-w-md mx-auto">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-2" />
-                <h3 className="text-red-800 font-medium mb-2">Initialization Failed</h3>
-                <p className="text-red-700 text-sm mb-4">{initializationError}</p>
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+                <AlertTriangle className="h-8 w-8 text-red-500 dark:text-red-400 mx-auto mb-2" />
+                <h3 className="text-red-800 dark:text-red-200 font-medium mb-2">
+                  Initialization Failed
+                </h3>
+                <p className="text-red-700 dark:text-red-300 text-sm mb-4">{initializationError}</p>
                 <button
                   type="button"
                   onClick={() => {
@@ -122,7 +124,7 @@ const TokenDashboard: React.FC = () => {
                     setIsInitializing(false);
                     // This will trigger the useEffect again
                   }}
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                  className="bg-red-600 dark:bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-700 dark:hover:bg-red-800 transition-colors"
                 >
                   Retry Initialization
                 </button>
@@ -130,8 +132,8 @@ const TokenDashboard: React.FC = () => {
             </div>
           ) : (
             <>
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" />
-              <p className="text-gray-600 mt-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mx-auto" />
+              <p className="text-gray-600 dark:text-gray-400 mt-4">
                 {isInitializing ? 'Initializing token tracking...' : 'Setting up your account...'}
               </p>
             </>
@@ -206,19 +208,23 @@ const TokenDashboard: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
+    <div className="max-w-6xl mx-auto p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Token Usage Dashboard</h1>
-        <p className="text-gray-600">Monitor your AI token consumption and manage your account</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          Token Usage Dashboard
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          Monitor your AI token consumption and manage your account
+        </p>
       </div>
 
       {/* Alert for low tokens */}
       {isRunningLow && (
-        <div className="mb-6 bg-orange-50 border border-orange-200 rounded-lg p-4 flex items-center space-x-3">
-          <AlertTriangle className="h-5 w-5 text-orange-500" />
+        <div className="mb-6 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 flex items-center space-x-3">
+          <AlertTriangle className="h-5 w-5 text-orange-500 dark:text-orange-400" />
           <div>
-            <h3 className="text-orange-800 font-medium">Low Token Balance</h3>
-            <p className="text-orange-700 text-sm">
+            <h3 className="text-orange-800 dark:text-orange-200 font-medium">Low Token Balance</h3>
+            <p className="text-orange-700 dark:text-orange-300 text-sm">
               You have {tokenStats.availableTokens.toLocaleString()} tokens remaining. Consider
               purchasing more to avoid service interruption.
             </p>
@@ -228,105 +234,121 @@ const TokenDashboard: React.FC = () => {
 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Available Tokens</p>
-              <p className="text-2xl font-bold text-green-600">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Available Tokens
+              </p>
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {tokenStats.availableTokens.toLocaleString()}
               </p>
             </div>
-            <Zap className="h-8 w-8 text-green-500" />
+            <Zap className="h-8 w-8 text-green-500 dark:text-green-400" />
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Monthly Usage</p>
-              <p className="text-2xl font-bold text-blue-600">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Monthly Usage</p>
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {tokenStats.monthlyTokensUsed.toLocaleString()}
               </p>
-              <p className="text-xs text-gray-500">of {tokenStats.monthlyLimit.toLocaleString()}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                of {tokenStats.monthlyLimit.toLocaleString()}
+              </p>
             </div>
-            <TrendingUp className="h-8 w-8 text-blue-500" />
+            <TrendingUp className="h-8 w-8 text-blue-500 dark:text-blue-400" />
           </div>
           <div className="mt-4">
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div
-                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                className="bg-blue-500 dark:bg-blue-400 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${Math.min(usagePercentage, 100)}%` }}
               />
             </div>
-            <p className="text-xs text-gray-500 mt-1">{usagePercentage.toFixed(1)}% used</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {usagePercentage.toFixed(1)}% used
+            </p>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Used</p>
-              <p className="text-2xl font-bold text-purple-600">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Used</p>
+              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                 {tokenStats.totalTokensUsed.toLocaleString()}
               </p>
             </div>
-            <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
-              <span className="text-purple-600 font-bold text-sm">∑</span>
+            <div className="h-8 w-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+              <span className="text-purple-600 dark:text-purple-400 font-bold text-sm">∑</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Purchased Tokens</p>
-              <p className="text-2xl font-bold text-orange-600">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Purchased Tokens
+              </p>
+              <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                 {tokenStats.purchasedTokens.toLocaleString()}
               </p>
             </div>
-            <CreditCard className="h-8 w-8 text-orange-500" />
+            <CreditCard className="h-8 w-8 text-orange-500 dark:text-orange-400" />
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Usage */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Usage</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col min-h-[500px]">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Usage</h2>
           </div>
-          <div className="p-6">
+          <div className="p-6 flex-1 min-h-0">
             {tokenStats.recentUsage && tokenStats.recentUsage.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-4 max-h-[600px] overflow-y-auto">
                 {tokenStats.recentUsage.map((usage, index) => (
                   <div
                     key={usage._id || index}
-                    className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0"
+                    className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
                   >
                     <div className="flex items-center space-x-3">
                       <div
-                        className={`w-2 h-2 rounded-full ${
-                          usage.command === 'deepseek' ? 'bg-blue-500' : 'bg-green-500'
+                        className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                          usage.command === 'deepseek'
+                            ? 'bg-blue-500 dark:bg-blue-400'
+                            : 'bg-green-500 dark:bg-green-400'
                         }`}
                       />
-                      <div>
-                        <p className="font-medium text-gray-900 capitalize">{usage.command}</p>
-                        <p className="text-sm text-gray-500">{formatDate(usage.timestamp)}</p>
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 dark:text-white capitalize truncate">
+                          {usage.command}
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {formatDate(usage.timestamp)}
+                        </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium text-gray-900">
+                    <div className="text-right flex-shrink-0 ml-4">
+                      <p className="font-medium text-gray-900 dark:text-white">
                         {usage.tokensUsed.toLocaleString()}
                       </p>
                       {usage.cost && usage.cost > 0 && (
-                        <p className="text-sm text-gray-500">{formatCurrency(usage.cost)}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {formatCurrency(usage.cost)}
+                        </p>
                       )}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 <p>No usage history yet</p>
               </div>
             )}
@@ -334,23 +356,25 @@ const TokenDashboard: React.FC = () => {
         </div>
 
         {/* Purchase Tokens */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Purchase Additional Tokens</h2>
-            <p className="text-sm text-gray-600 mt-1">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col min-h-[500px]">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Purchase Additional Tokens
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Expand your AI capabilities with additional token packages
             </p>
           </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 gap-4">
+          <div className="p-6 flex-1 min-h-0">
+            <div className="grid grid-cols-1 gap-4 max-h-[600px] overflow-y-auto">
               {tokenPackages.map((pkg) => (
                 <button
                   key={pkg.id}
                   type="button"
-                  className={`relative border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md text-left ${
+                  className={`relative border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md text-left flex-shrink-0 ${
                     pkg.popular
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                   }`}
                   onClick={() => handlePurchase(pkg)}
                   onKeyDown={(e) => {
@@ -360,19 +384,21 @@ const TokenDashboard: React.FC = () => {
                   }}
                 >
                   {pkg.popular && (
-                    <div className="absolute -top-2 left-4 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                    <div className="absolute -top-2 left-4 bg-blue-500 dark:bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
                       Popular
                     </div>
                   )}
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-gray-900">
+                      <p className="font-semibold text-gray-900 dark:text-white">
                         {pkg.tokens.toLocaleString()} Tokens
                       </p>
-                      <p className="text-sm text-gray-600">${(pkg.price / 100).toFixed(2)}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        ${(pkg.price / 100).toFixed(2)}
+                      </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         ${(pkg.price / 100 / (pkg.tokens / 1000)).toFixed(3)}/1K tokens
                       </p>
                     </div>
@@ -386,47 +412,47 @@ const TokenDashboard: React.FC = () => {
 
       {/* Purchase Modal */}
       {showPurchaseModal && selectedPackage && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
-            <div className="p-6 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full mx-4">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 {purchaseSuccess ? 'Purchase Successful!' : 'Purchase Tokens'}
               </h3>
             </div>
             <div className="p-6">
               {purchaseSuccess ? (
                 <div className="text-center py-6">
-                  <Check className="h-16 w-16 text-green-500 mx-auto mb-4" />
-                  <p className="text-green-700 font-medium">
+                  <Check className="h-16 w-16 text-green-500 dark:text-green-400 mx-auto mb-4" />
+                  <p className="text-green-700 dark:text-green-300 font-medium">
                     {selectedPackage.tokens.toLocaleString()} tokens added to your account!
                   </p>
                 </div>
               ) : (
                 <>
                   <div className="mb-6">
-                    <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-gray-600">Tokens:</span>
-                        <span className="font-semibold">
+                        <span className="text-gray-600 dark:text-gray-400">Tokens:</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">
                           {selectedPackage.tokens.toLocaleString()}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Price:</span>
-                        <span className="font-semibold">
+                        <span className="text-gray-600 dark:text-gray-400">Price:</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">
                           ${(selectedPackage.price / 100).toFixed(2)}
                         </span>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                       Note: This is a demo purchase. In production, you would be redirected to a
                       secure payment processor.
                     </p>
                   </div>
 
                   {purchaseError && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-red-700 text-sm">{purchaseError}</p>
+                    <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <p className="text-red-700 dark:text-red-300 text-sm">{purchaseError}</p>
                     </div>
                   )}
 
@@ -435,7 +461,7 @@ const TokenDashboard: React.FC = () => {
                       type="button"
                       onClick={closeModal}
                       disabled={isProcessingPurchase}
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Cancel
                     </button>
@@ -443,7 +469,7 @@ const TokenDashboard: React.FC = () => {
                       type="button"
                       onClick={processPurchase}
                       disabled={isProcessingPurchase}
-                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isProcessingPurchase ? (
                         <>

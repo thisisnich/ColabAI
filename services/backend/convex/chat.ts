@@ -246,6 +246,13 @@ export const sendMessage = mutation({
           chatId: args.chatId,
           userId: user._id,
         });
+      }
+      if (command === 'deepseek') {
+        await ctx.scheduler.runAfter(0, internal.commands.getDeepSeekResponse, {
+          prompt: commandArgs,
+          chatId: args.chatId,
+          userId: user._id,
+        });
       } else {
         // Handle other commands as needed
       }

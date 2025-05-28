@@ -14,7 +14,6 @@
 // ============================================================================
 
 import { useSessionMutation, useSessionQuery } from 'convex-helpers/react/sessions';
-import { Eye } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 import { api } from '@workspace/backend/convex/_generated/api';
@@ -30,7 +29,6 @@ import { Button } from './ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -50,7 +48,6 @@ export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: Cha
   // State Management
   // ========================================
   const [message, setMessage] = useState('');
-  const [isContextViewerOpen, setIsContextViewerOpen] = useState(false);
 
   // ========================================
   // Refs
@@ -94,8 +91,6 @@ export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: Cha
       console.error('Failed to send message:', error);
     }
   };
-
-  const handleToggleContextViewer = () => setIsContextViewerOpen(!isContextViewerOpen);
 
   // ========================================
   // Effects
@@ -189,11 +184,7 @@ export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: Cha
 
               <DropdownMenuSeparator />
               <ContextSettings chatId={chatId} />
-
-              <DropdownMenuItem onClick={handleToggleContextViewer}>
-                <Eye className="w-4 h-4 mr-2" />
-                View Context
-              </DropdownMenuItem>
+              <ContextViewer chatId={chatId} />
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -239,13 +230,6 @@ export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: Cha
           </div>
         </div>
       )}
-
-      {/* Context Viewer Modal */}
-      <ContextViewer
-        chatId={chatId}
-        isOpen={isContextViewerOpen}
-        onOpenChange={setIsContextViewerOpen}
-      />
     </div>
   );
 }
