@@ -15,6 +15,20 @@ interface FileData {
   error?: string;
 }
 
+// Type for backend file attachment (matching the Convex schema)
+interface FileAttachment {
+  id: string;
+  name: string;
+  language: string;
+  content: string;
+  metadata: {
+    size: number;
+    lines: number;
+    estimatedTokens: number;
+    fileType: string;
+  };
+}
+
 interface UseFileProcessorReturn {
   processedFiles: ProcessedFile[];
   isProcessing: boolean;
@@ -27,6 +41,10 @@ interface UseFileProcessorReturn {
   ) => Array<{ file: ProcessedFile; matches: Array<{ line: number; content: string }> }>;
   exportFilesData: () => string;
   getContextForChat: (options?: { includeComments?: boolean; includeMetadata?: boolean }) => string;
+  // New methods for backend integration
+  getFilesForMessage: () => FileAttachment[];
+  hasFiles: () => boolean;
+  clearFilesAfterSend: () => void;
 }
 
 export function useFileProcessor(): UseFileProcessorReturn {
@@ -99,6 +117,35 @@ export function useFileProcessor(): UseFileProcessorReturn {
     setProcessedFiles([]);
     toast.info('All files cleared');
   }, []);
+
+  // New method to clear files after sending (without toast notification)
+  const clearFilesAfterSend = useCallback(() => {
+    setProcessedFiles([]);
+  }, []);
+
+  // ========================================
+  // Backend Integration Methods
+  // ========================================
+  const getFilesForMessage = useCallback((): FileAttachment[] => {
+    return processedFiles
+      .filter((file) => file.status === 'completed')
+      .map((file) => ({
+        id: file.id,
+        name: file.name,
+        language: file.language,
+        content: file.content,
+        metadata: {
+          size: file.metadata.size,
+          lines: file.metadata.lines,
+          estimatedTokens: file.metadata.estimatedTokens,
+          fileType: file.metadata.fileType,
+        },
+      }));
+  }, [processedFiles]);
+
+  const hasFiles = useCallback((): boolean => {
+    return processedFiles.some((file) => file.status === 'completed');
+  }, [processedFiles]);
 
   // ========================================
   // Utility Functions
@@ -225,5 +272,9 @@ export function useFileProcessor(): UseFileProcessorReturn {
     searchInFiles,
     exportFilesData,
     getContextForChat,
+    // New methods for backend integration
+    getFilesForMessage,
+    hasFiles,
+    clearFilesAfterSend,
   };
 }

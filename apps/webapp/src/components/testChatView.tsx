@@ -1,40 +1,32 @@
 // ============================================================================
-// STANDARDIZED COMPONENT PATTERNS
+// ChatView.tsx - STANDARDIZED WITH MessageInput - FIXED
 // ============================================================================
 
-// 1. Import order: external libraries → internal APIs → components → UI → types
-// 2. Consistent interface naming: ComponentNameProps
-// 3. Standardized state management patterns
-// 4. Consistent error handling and loading states
-// 5. Unified dialog/modal patterns
-// 6. Consistent button and action patterns
-
-// ============================================================================
-// ChatView.tsx - STANDARDIZED WITH MessageInput
-// ============================================================================
-
+'use client';
 import { useSessionMutation, useSessionQuery } from 'convex-helpers/react/sessions';
 import { useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 
 import { api } from '@workspace/backend/convex/_generated/api';
 import type { Id } from '@workspace/backend/convex/_generated/dataModel';
 
-import { ChatInvite } from './ChatInvite';
-import { ChatSettings } from './ChatSettings';
-import { ContextSettings } from './ContextSettings';
-import { ContextViewer } from './ContextViewer';
-import { FormattedMessageDisplay } from './MessageDisplay';
-import { MessageInput } from './MessageInput';
+import { ChatInvite } from '@/components/ChatInvite';
+import { ChatSettings } from '@/components/ChatSettings';
+import { ContextSettings } from '@/components/ContextSettings';
+import { ContextViewer } from '@/components/ContextViewer';
+import { FormattedMessageDisplay } from '@/components/MessageDisplay';
+import { MessageInput } from '@/components/MessageInput';
 
-import { Button } from './ui/button';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from './ui/dropdown-menu';
-import { Skeleton } from './ui/skeleton';
+} from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useFileProcessor } from '@/lib/useFileProcessor';
 
 interface ChatViewProps {
   chatId: Id<'chats'>;
@@ -42,12 +34,29 @@ interface ChatViewProps {
   sidebarOpen: boolean;
   isMobile: boolean;
 }
+interface FileAttachment {
+  id: string;
+  name: string;
+  language: string;
+  content: string;
+  metadata: {
+    size: number;
+    lines: number;
+    estimatedTokens: number;
+    fileType: string;
+  };
+}
 
 export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: ChatViewProps) {
   // ========================================
   // Refs
   // ========================================
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // ========================================
+  // Hooks - FIXED: Call the hook to get the object with methods
+  // ========================================
+  const fileProcessor = useFileProcessor();
 
   // ========================================
   // Queries
@@ -75,14 +84,28 @@ export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: Cha
   // ========================================
   // Event Handlers
   // ========================================
-  const handleSendMessage = async (content: string) => {
-    if (!content.trim() || !canSendMessages) return;
-
+  const handleSendMessage = async (content: string, files?: FileAttachment[]) => {
     try {
-      await sendMessage({ chatId, content });
+      // Validate inputs
+      if (!content.trim() && (!files || files.length === 0)) {
+        toast.error('Please enter a message or attach files');
+        return;
+      }
+
+      // Send message with file attachments
+      await sendMessage({
+        chatId,
+        content,
+        files: files || undefined,
+      });
+
+      // FIXED: Clear files after successful send using the hook's returned object
+      fileProcessor.clearFilesAfterSend();
+
+      toast.success('Message sent successfully');
     } catch (error) {
       console.error('Failed to send message:', error);
-      throw error; // Re-throw to let MessageInput handle the error state
+      toast.error('Failed to send message. Please try again.');
     }
   };
 
