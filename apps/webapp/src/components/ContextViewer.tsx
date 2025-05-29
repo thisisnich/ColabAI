@@ -85,7 +85,7 @@ export function ContextViewer({ chatId }: ContextViewerProps) {
   // Queries
   // ========================================
   const contextData = useQuery(
-    api.chat.getContextMessages,
+    api.context.getContextMessages,
     isOpen ? { chatId, maxMessages: 50 } : 'skip'
   );
   const latestSummary = useQuery(

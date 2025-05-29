@@ -116,13 +116,13 @@ export function ContextSettings({
   // ========================================
   // Queries
   // ========================================
-  const contextSettings = useSessionQuery(api.chat.getContextSettings, { chatId });
+  const contextSettings = useSessionQuery(api.context.getContextSettings, { chatId });
   const tokenStats = useSessionQuery(api.tokens.getUserTokenStats, { limit: 5 });
 
   // ========================================
   // Mutations
   // ========================================
-  const updateContextSettings = useSessionMutation(api.chat.updateContextSettings);
+  const updateContextSettings = useSessionMutation(api.context.updateContextSettings);
   const initializeTokens = useSessionMutation(api.tokens.initializeUserTokensFromSession);
 
   // ========================================
