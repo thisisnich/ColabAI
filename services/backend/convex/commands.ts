@@ -133,7 +133,7 @@ export const getDeepSeekResponse = internalAction({
       const aiResponse = data.choices?.[0]?.message?.content || 'No response generated';
 
       // Send the response to chat
-      await ctx.runMutation(internal.chat.sendChatbotMessage, {
+      await ctx.runMutation(internal.messages.sendChatbotMessage, {
         chatId: args.chatId,
         content: aiResponse,
       });
