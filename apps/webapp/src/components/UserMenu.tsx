@@ -19,15 +19,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useUserType } from '@/lib/useUserTypes';
 import { useAuthState } from '@/modules/auth/AuthProvider';
 import { api } from '@workspace/backend/convex/_generated/api';
-import { useSessionMutation } from 'convex-helpers/react/sessions';
+import { useSessionMutation, useSessionQuery } from 'convex-helpers/react/sessions';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
 export function UserMenu() {
+  const { isFullUser } = useUserType();
   const authState = useAuthState();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -93,9 +95,12 @@ export function UserMenu() {
           <Link href="/app">
             <DropdownMenuItem className="cursor-pointer">Chat</DropdownMenuItem>
           </Link>
-          <Link href="/app/manage">
-            <DropdownMenuItem className="cursor-pointer">Manage</DropdownMenuItem>
-          </Link>
+          {isFullUser && (
+            <Link href="/app/manage">
+              <DropdownMenuItem className="cursor-pointer">Manage</DropdownMenuItem>
+            </Link>
+          )}
+
           <DropdownMenuSeparator />
 
           <DropdownMenuItem
