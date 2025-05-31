@@ -18,7 +18,7 @@ export function SummarizationControls({ chatId, className }: SummarizationContro
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Get context data to check if summarization is needed
-  const contextData = useSessionQuery(api.chat.getContextMessages, { chatId });
+  const contextData = useSessionQuery(api.context.getContextMessages, { chatId });
   const latestSummary = useSessionQuery(api.chatSummarization.getLatestSummary, { chatId });
   const requestSummarization = useSessionMutation(api.chatSummarization.requestSummarization);
 

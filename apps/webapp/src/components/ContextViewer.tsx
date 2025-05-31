@@ -85,7 +85,7 @@ export function ContextViewer({ chatId }: ContextViewerProps) {
   // Queries
   // ========================================
   const contextData = useQuery(
-    api.chat.getContextMessages,
+    api.context.getContextMessages,
     isOpen ? { chatId, maxMessages: 50 } : 'skip'
   );
   const latestSummary = useQuery(
@@ -183,7 +183,7 @@ export function ContextViewer({ chatId }: ContextViewerProps) {
       for (let i = 0; i < contextData.messages.length; i++) {
         const msg = contextData.messages[i];
         const timestamp = new Date(msg.timestamp).toLocaleString();
-        const sender = msg.type === 'chatbot' ? 'AI Assistant' : msg.sender?.name || 'User';
+        const sender = msg.type === 'chatbot' ? 'AI Assistant' : msg.userInfo?.name || 'User';
         content += `[${timestamp}] ${sender}:\n${msg.content}\n\n`;
       }
     }
