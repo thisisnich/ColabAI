@@ -4,8 +4,8 @@
 - [x] Fix userToken initializatin
 - [x] after closing context view, cant clikc anyth else.
 - [x] Setup so that anonymous accounts cant make new chats but can join. set myself as only full acc
-- [ ] FIX MOBILE CHAT VIEW
-
+- [x] FIX MOBILE CHAT VIEW
+- [ ]Fix mobile landscape view
 ## 🧠 AI Context
 - [x] Fix AI context settings (currently not functioning)
 - [x] Set up AI context summary for better context-awareness
