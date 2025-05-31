@@ -120,12 +120,20 @@ export function ChatSidebar({ onChatSelect, selectedChatId, className }: ChatSid
           // Empty state
           <div className="text-center p-8 border rounded-lg bg-card">
             <h3 className="font-medium mb-2">No chats yet</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Create a new chat to start messaging
-            </p>
-            <Button variant="outline" size="sm" onClick={() => setNewChatDialogOpen(true)}>
-              Create your first chat
-            </Button>
+            {isFullUser ? (
+              <>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Create a new chat to start messaging or wait for someone to invite you
+                </p>
+                <Button variant="outline" size="sm" onClick={() => setNewChatDialogOpen(true)}>
+                  Create your first chat
+                </Button>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground mb-4">
+                Wait for someone to invite you to a chat
+              </p>
+            )}
           </div>
         ) : (
           // Chat list
