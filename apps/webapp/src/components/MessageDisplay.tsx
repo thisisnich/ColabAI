@@ -82,7 +82,7 @@ const formatInlineText = (text: string): React.ReactNode => {
       return (
         <code
           key={partKey}
-          className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm font-mono"
+          className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm font-mono break-all"
         >
           {part.slice(1, -1)}
         </code>
@@ -98,7 +98,7 @@ const formatInlineText = (text: string): React.ReactNode => {
           href={linkMatch[2]}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline"
+          className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline break-all"
         >
           {linkMatch[1]}
         </a>
@@ -121,7 +121,7 @@ export const MessageContent = ({
 }) => {
   // If formatting is disabled, return plain text
   if (!enableFormatting) {
-    return <p className="break-words whitespace-pre-wrap">{content}</p>;
+    return <p className="break-words whitespace-pre-wrap text-sm sm:text-base">{content}</p>;
   }
 
   // For both AI and user messages, apply markdown formatting
@@ -138,7 +138,7 @@ export const MessageContent = ({
       if (text.trim()) {
         elements.push(
           <div key={elements.length} className="mb-2 last:mb-0">
-            <p className="break-words whitespace-pre-wrap leading-relaxed">
+            <p className="break-words whitespace-pre-wrap leading-relaxed text-sm sm:text-base">
               {formatInlineText(text)}
             </p>
           </div>
@@ -176,7 +176,7 @@ export const MessageContent = ({
       if (i === lines.length - 1 || lines[i + 1]?.startsWith('```')) {
         elements.push(
           <div key={elements.length} className="mb-3">
-            <pre className="bg-gray-100 dark:bg-gray-800 rounded-md p-3 text-sm overflow-x-auto">
+            <pre className="bg-gray-100 dark:bg-gray-800 rounded-md p-2 sm:p-3 text-xs sm:text-sm overflow-x-auto max-w-full">
               <code className={codeBlockLanguage ? `language-${codeBlockLanguage}` : ''}>
                 {currentElement.join('\n')}
               </code>
@@ -188,11 +188,14 @@ export const MessageContent = ({
       continue;
     }
 
-    // Handle headers
+    // Handle headers with mobile-friendly sizing
     if (line.startsWith('### ')) {
       flushCurrentElement();
       elements.push(
-        <h3 key={elements.length} className="text-lg font-semibold mb-2 mt-3 first:mt-0">
+        <h3
+          key={elements.length}
+          className="text-base sm:text-lg font-semibold mb-2 mt-3 first:mt-0"
+        >
           {formatInlineText(line.substring(4))}
         </h3>
       );
@@ -202,7 +205,7 @@ export const MessageContent = ({
     if (line.startsWith('## ')) {
       flushCurrentElement();
       elements.push(
-        <h2 key={elements.length} className="text-xl font-bold mb-2 mt-4 first:mt-0">
+        <h2 key={elements.length} className="text-lg sm:text-xl font-bold mb-2 mt-4 first:mt-0">
           {formatInlineText(line.substring(3))}
         </h2>
       );
@@ -212,7 +215,7 @@ export const MessageContent = ({
     if (line.startsWith('# ')) {
       flushCurrentElement();
       elements.push(
-        <h1 key={elements.length} className="text-2xl font-bold mb-3 mt-4 first:mt-0">
+        <h1 key={elements.length} className="text-xl sm:text-2xl font-bold mb-3 mt-4 first:mt-0">
           {formatInlineText(line.substring(2))}
         </h1>
       );
@@ -228,7 +231,7 @@ export const MessageContent = ({
       continue;
     }
 
-    // Handle lists
+    // Handle lists with mobile optimization
     if (line.match(/^\s*[-*+]\s/) || line.match(/^\s*\d+\.\s/)) {
       flushCurrentElement();
 
@@ -252,7 +255,7 @@ export const MessageContent = ({
       elements.push(
         <ListTag
           key={elements.length}
-          className={`mb-3 ${isOrdered ? 'list-decimal' : 'list-disc'} list-inside space-y-1`}
+          className={`mb-3 ${isOrdered ? 'list-decimal' : 'list-disc'} list-inside space-y-1 text-sm sm:text-base`}
         >
           {listItems.map((item, itemIndex) => {
             const cleanItem = item.replace(/^\s*[-*+]\s/, '').replace(/^\s*\d+\.\s/, '');
@@ -267,7 +270,7 @@ export const MessageContent = ({
       continue;
     }
 
-    // Handle blockquotes
+    // Handle blockquotes with mobile optimization
     if (line.startsWith('> ')) {
       flushCurrentElement();
       // Collect multiple consecutive blockquote lines
@@ -281,12 +284,12 @@ export const MessageContent = ({
 
       elements.push(
         <blockquote
-          key={`blockquote-${elements.length}`} // Better key using a prefix
-          className="border-l-4 border-gray-300 dark:border-gray-600 pl-4 italic text-gray-600 dark:text-gray-400 mb-3 bg-gray-50 dark:bg-gray-800/50 py-2 rounded-r"
+          key={`blockquote-${elements.length}`}
+          className="border-l-4 border-gray-300 dark:border-gray-600 pl-3 sm:pl-4 italic text-gray-600 dark:text-gray-400 mb-3 bg-gray-50 dark:bg-gray-800/50 py-2 rounded-r text-sm sm:text-base"
         >
           {blockquoteLines.map((quoteLine) => (
             <p
-              key={`quote-line-${quoteLine.substring(0, 10)}-${Math.random().toString(36).substring(2, 8)}`} // Creates a more unique key
+              key={`quote-line-${quoteLine}-${Math.random().toString(36).substr(2, 9)}`}
               className="break-words whitespace-pre-wrap leading-relaxed"
             >
               {formatInlineText(quoteLine)}
@@ -313,7 +316,7 @@ export function FormattedMessageDisplay({
   messagesEndRef,
 }: FormattedMessageDisplayProps) {
   return (
-    <div className="flex flex-col space-y-4">
+    <div className="flex flex-col space-y-3 sm:space-y-4">
       {messages.map((msg) => {
         // Determine message type - handle string types
         const isSystemMessage = msg.type === 'system';
@@ -328,19 +331,19 @@ export function FormattedMessageDisplay({
         return (
           <div key={msg.id} className="flex w-full">
             <div
-              className={`rounded-lg p-4 inline-block min-w-[180px] max-w-[70%] ${
+              className={`rounded-lg p-3 sm:p-4 inline-block min-w-0 max-w-[85%] sm:max-w-[70%] ${
                 isSystemMessage
                   ? 'bg-muted text-center text-xs text-muted-foreground mx-auto'
                   : isSelfMessage
                     ? 'bg-blue-500 text-white ml-auto'
                     : isAIMessage
-                      ? 'bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 mr-auto'
+                      ? 'bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 mr-auto shadow-sm'
                       : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 mr-auto'
               }`}
             >
               {!isSystemMessage && (
                 <div
-                  className={`flex items-center gap-2 mb-2 pb-2 border-b ${
+                  className={`flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2 pb-2 border-b ${
                     isSelfMessage
                       ? 'text-blue-100 border-blue-400'
                       : isAIMessage
@@ -353,14 +356,14 @@ export function FormattedMessageDisplay({
                   {!isAIMessage && (
                     <Badge
                       variant={getRoleBadgeVariant(senderRoleName, isCreator)}
-                      className="text-xs px-2 py-0.5 h-5"
+                      className="text-xs px-2 py-0.5 h-5 self-start sm:self-auto"
                     >
                       {getRoleDisplayName(senderRoleName, isCreator)}
                     </Badge>
                   )}
                 </div>
               )}
-              <div>
+              <div className="min-w-0">
                 <MessageContent content={msg.content} isAI={isAIMessage} enableFormatting={true} />
               </div>
             </div>
