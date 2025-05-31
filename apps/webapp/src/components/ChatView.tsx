@@ -43,6 +43,19 @@ interface ChatViewProps {
   isMobile: boolean;
 }
 
+interface ProcessedFileAttachment {
+  id: string;
+  name: string;
+  language: string;
+  content: string;
+  metadata: {
+    size: number;
+    lines: number;
+    estimatedTokens: number;
+    fileType: string;
+  };
+}
+
 export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: ChatViewProps) {
   // ========================================
   // Refs
@@ -75,11 +88,15 @@ export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: Cha
   // ========================================
   // Event Handlers
   // ========================================
-  const handleSendMessage = async (content: string) => {
-    if (!content.trim() || !canSendMessages) return;
+  const handleSendMessage = async (content: string, files?: ProcessedFileAttachment[]) => {
+    if ((!content.trim() && !files?.length) || !canSendMessages) return;
 
     try {
-      await sendMessage({ chatId, content });
+      await sendMessage({
+        chatId,
+        content,
+        files, // ✅ Now passing files to the backend!
+      });
     } catch (error) {
       console.error('Failed to send message:', error);
       throw error; // Re-throw to let MessageInput handle the error state

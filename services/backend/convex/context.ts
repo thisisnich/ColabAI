@@ -119,10 +119,40 @@ export const updateContextSettings = mutation({
 });
 
 // Get context messages for AI commands (internal function)
+// Simplified type definitions based on your schema
+type MessageDoc = {
+  _id: Id<'messages'>;
+  _creationTime: number;
+  chatId: Id<'chats'>;
+  userId: Id<'users'>;
+  content: string;
+  timestamp: number;
+  type?: string;
+  includedInContext?: boolean;
+  isDeepSeekCommand?: boolean;
+  contextRelevance?: number;
+  updatedAt?: number;
+  files?: Array<{
+    id: string;
+    name: string;
+    language: string;
+    content: string;
+    metadata: {
+      size: number;
+      lines: number;
+      estimatedTokens: number;
+      fileType: string;
+      uploadedAt?: number;
+    };
+  }>;
+};
+
 export const getContextMessages = query({
   args: {
     chatId: v.id('chats'),
     maxMessages: v.optional(v.number()), // Limit number of messages to prevent token overuse
+    includeFiles: v.optional(v.boolean()), // Whether to include file attachments in context
+    maxFileSize: v.optional(v.number()), // Max file size to include (in chars)
   },
   handler: async (ctx, args) => {
     // Get context settings
@@ -130,58 +160,138 @@ export const getContextMessages = query({
       .query('chatContextSettings')
       .withIndex('by_chat', (q) => q.eq('chatId', args.chatId))
       .unique();
-
     const contextMode = settings?.contextMode || 'deepseek_only';
     const useSummaryContext = settings?.useSummaryContext || false;
+    const includeFiles = args.includeFiles !== false; // Default to true
+    const maxFileSize = args.maxFileSize || 10000; // Default 10k chars per file
 
     if (contextMode === 'none') {
       return {
         messages: [],
         summary: null,
         tokenEstimate: 0,
+        fileCount: 0,
+        filesTokenEstimate: 0,
       };
     }
 
     const maxMessages = args.maxMessages || 50; // Default limit to prevent excessive token usage
 
-    // biome-ignore lint/suspicious/noImplicitAnyLet: <explanation>
-    let messages;
+    // Properly typed messages variable
+    let messages: MessageDoc[];
 
     if (contextMode === 'deepseek_only') {
-      // Get only messages that start with /deepseek or are chatbot responses
-      messages = await ctx.db
+      // Get all messages first, then filter in memory for better reliability
+      const allMessages = await ctx.db
         .query('messages')
         .withIndex('by_chat_time', (q) => q.eq('chatId', args.chatId))
         .order('desc')
-        .filter((q) =>
-          q.or(q.eq(q.field('isDeepSeekCommand'), true), q.eq(q.field('type'), 'chatbot'))
-        )
-        .take(maxMessages);
-    } else {
+        .take(maxMessages * 2); // Get more messages to account for filtering
+
+      // Filter messages in memory for more reliable string matching
+      messages = allMessages
+        .filter((msg) => {
+          // Include messages marked as DeepSeek commands
+          if (msg.isDeepSeekCommand === true) {
+            return true;
+          }
+
+          // Include chatbot responses (DeepSeek AI responses)
+          if (msg.type === 'chatbot') {
+            return true;
+          }
+
+          // Include user messages that start with /deepseek (case insensitive)
+          if (
+            msg.type === 'user' &&
+            msg.content &&
+            msg.content.trim().toLowerCase().startsWith('/deepseek')
+          ) {
+            return true;
+          }
+
+          // Include messages with file attachments (they might be relevant for AI context)
+          if (msg.files && msg.files.length > 0) {
+            return true;
+          }
+
+          return false;
+        })
+        .slice(0, maxMessages); // Limit to maxMessages after filtering
+    } else if (contextMode === 'all_messages') {
       // Get all messages
       messages = await ctx.db
         .query('messages')
         .withIndex('by_chat_time', (q) => q.eq('chatId', args.chatId))
         .order('desc')
         .take(maxMessages);
+    } else {
+      // Default fallback to deepseek_only behavior
+      const allMessages = await ctx.db
+        .query('messages')
+        .withIndex('by_chat_time', (q) => q.eq('chatId', args.chatId))
+        .order('desc')
+        .take(maxMessages * 2);
+
+      messages = allMessages
+        .filter((msg) => {
+          return (
+            msg.isDeepSeekCommand === true ||
+            msg.type === 'chatbot' ||
+            (msg.type === 'user' &&
+              msg.content &&
+              msg.content.trim().toLowerCase().startsWith('/deepseek')) ||
+            (msg.files && msg.files.length > 0) // Include file messages
+          );
+        })
+        .slice(0, maxMessages);
     }
 
     // Reverse to get chronological order
     messages.reverse();
 
-    // Get user information for messages
-    const messagesWithUsers = await Promise.all(
+    // Process messages and add user info inline - much simpler approach
+    const processedMessages = await Promise.all(
       messages.map(async (msg) => {
         const user = await ctx.db.get(msg.userId);
+
+        // Process files if they exist and should be included
+        if (includeFiles && msg.files && msg.files.length > 0) {
+          // Truncate large files in place
+          msg.files = msg.files.map((file) => {
+            if (file.content.length > maxFileSize) {
+              return {
+                ...file,
+                content: file.content.substring(0, maxFileSize),
+                metadata: {
+                  ...file.metadata,
+                  originalSize: file.content.length,
+                  truncated: true,
+                  contextTokens: Math.ceil(maxFileSize / 4),
+                },
+              };
+            }
+            return {
+              ...file,
+              metadata: {
+                ...file.metadata,
+                contextTokens: Math.ceil(file.content.length / 4),
+              },
+            };
+          });
+        }
+
+        // Add user info as a computed property, don't modify the message structure
         return {
           ...msg,
-          sender: user ? { name: user.name, id: user._id } : { name: 'Unknown', id: msg.userId },
+          // Add user info without changing the core message type
+          userInfo: user ? { name: user.name, id: user._id } : { name: 'Unknown', id: msg.userId },
         };
       })
     );
 
-    let summary = null;
-    let effectiveMessages = messagesWithUsers;
+    let summary: string | null = null;
+    let effectiveMessages = processedMessages;
 
     // If using summary context and we have many messages, summarize older ones
     if (useSummaryContext && messages.length > 20) {
@@ -197,22 +307,47 @@ export const getContextMessages = query({
       if (existingSummary) {
         summary = existingSummary.summary;
         // Return only recent messages + summary
-        effectiveMessages = messagesWithUsers.slice(-10); // Last 10 messages
+        effectiveMessages = processedMessages.slice(-10); // Last 10 messages
       }
     }
 
-    // Estimate token usage (rough calculation)
-    const tokenEstimate =
-      effectiveMessages.reduce((total, msg) => {
-        return total + Math.ceil(msg.content.length / 4);
-      }, 0) + (summary ? Math.ceil(summary.length / 4) : 0);
+    // Calculate token estimates
+    let messageTokens = 0;
+    let filesTokens = 0;
+    let fileCount = 0;
+
+    for (const message of effectiveMessages) {
+      // Message content tokens
+      messageTokens += Math.ceil(message.content.length / 4);
+
+      // File tokens and count
+      if (message.files?.length) {
+        fileCount += message.files.length;
+        for (const file of message.files) {
+          filesTokens += Math.ceil(file.content.length / 4);
+        }
+      }
+    }
+
+    const summaryTokens = summary ? Math.ceil(summary.length / 4) : 0;
+    const totalTokenEstimate = messageTokens + filesTokens + summaryTokens;
 
     return {
       messages: effectiveMessages,
       summary,
-      tokenEstimate,
-      needsSummarization: messages.length > 20, // Example condition
+      tokenEstimate: totalTokenEstimate,
+      messageTokens: messageTokens,
+      filesTokenEstimate: filesTokens,
+      summaryTokens: summaryTokens,
+      fileCount: fileCount,
+      needsSummarization: messages.length > 20,
       totalMessageCount: messages.length,
+      contextMode,
+      fileProcessingSettings: {
+        includeFiles: includeFiles,
+        maxFileSize: maxFileSize,
+        filesIncluded: fileCount > 0,
+      },
     };
   },
 });

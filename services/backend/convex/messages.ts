@@ -54,6 +54,11 @@ export const sendMessage = mutation({
       });
     }
 
+    // Check if this is a DeepSeek command
+    const isDeepSeekCommand = hasContent
+      ? args.content.trim().toLowerCase().startsWith('/deepseek')
+      : false;
+
     // Validate file attachments if provided
     if (args.files && args.files.length > 0) {
       const maxFiles = 10;
@@ -161,6 +166,8 @@ export const sendMessage = mutation({
       files: processedFiles,
       // Add message type for better categorization
       type: hasFiles && !hasContent ? 'file-only' : 'message',
+      // Add the isDeepSeekCommand field
+      isDeepSeekCommand: isDeepSeekCommand,
     });
 
     // Handle commands (only if there's text content)
@@ -202,19 +209,25 @@ export const sendMessage = mutation({
                 type: 'system',
               });
             } else {
+              // Pass files directly to getDeepSeekResponse
               await ctx.scheduler.runAfter(0, internal.commands.getDeepSeekResponse, {
                 prompt: commandArgs,
                 chatId: args.chatId,
                 userId: user._id,
+                // Pass the processed files to the DeepSeek command
+                attachedFiles: processedFiles || undefined,
               });
             }
             break;
 
           case 'deeptest':
+            // Also pass files to the test command for testing file functionality
             await ctx.scheduler.runAfter(0, internal.commands.getDeepSeekResponse, {
-              prompt: 'Respond with just the word "success" if this works',
+              prompt:
+                'Respond with just the word "success" if this works. If files are attached, also mention how many files you can see.',
               chatId: args.chatId,
               userId: user._id,
+              attachedFiles: processedFiles || undefined,
             });
             break;
 

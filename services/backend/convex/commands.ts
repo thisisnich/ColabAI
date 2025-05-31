@@ -4,11 +4,30 @@ import type { Id } from './_generated/dataModel';
 import { internalAction } from './_generated/server';
 import type { ActionCtx } from './_generated/server';
 
+// Enhanced getDeepSeekResponse with direct file support
 export const getDeepSeekResponse = internalAction({
   args: {
     prompt: v.string(),
     chatId: v.id('chats'),
     userId: v.id('users'),
+    // Add direct file support
+    attachedFiles: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          name: v.string(),
+          language: v.string(),
+          content: v.string(),
+          metadata: v.object({
+            size: v.number(),
+            lines: v.number(),
+            estimatedTokens: v.number(),
+            fileType: v.string(),
+            uploadedAt: v.optional(v.number()),
+          }),
+        })
+      )
+    ),
   },
   handler: async (ctx, args) => {
     try {
@@ -27,17 +46,31 @@ export const getDeepSeekResponse = internalAction({
       }
 
       // Get context messages based on chat settings
-      const contextData = await ctx.runQuery(api.chat.getContextMessages, {
+      const contextData = await ctx.runQuery(api.context.getContextMessages, {
         chatId: args.chatId,
-        maxMessages: 50, // Reasonable limit to prevent excessive token usage
+        maxMessages: 50,
+        includeFiles: true,
+        maxFileSize: 15000,
       });
 
-      // Estimate tokens including context
+      // Calculate tokens for attached files
+      let attachedFilesTokens = 0;
+      if (args.attachedFiles && args.attachedFiles.length > 0) {
+        for (const file of args.attachedFiles) {
+          attachedFilesTokens += estimateTokenCount(file.content);
+          // Add some overhead for file formatting
+          attachedFilesTokens += estimateTokenCount(
+            `--- File: ${file.name} ---\n--- End of ${file.name} ---`
+          );
+        }
+      }
+
+      // Estimate tokens including context and attached files
       const promptTokens = estimateTokenCount(args.prompt);
       const contextTokens = contextData.tokenEstimate;
-      const totalEstimatedTokens = promptTokens + contextTokens + 1000; // Add buffer for response
+      const totalEstimatedTokens = promptTokens + contextTokens + attachedFilesTokens + 1000; // Add buffer for response
 
-      // Check token limits with context included
+      // Check token limits
       let tokenCheck = await ctx.runQuery(internal.tokens.checkTokenLimit, {
         userId: args.userId,
         estimatedTokens: totalEstimatedTokens,
@@ -76,23 +109,74 @@ export const getDeepSeekResponse = internalAction({
         });
       }
 
-      // Add context messages
+      // Add context messages with file handling
       for (const msg of contextData.messages) {
         const role = msg.type === 'chatbot' ? 'assistant' : 'user';
         let content = msg.content;
 
         // For user messages, include the sender's name for multi-user context
-        if (role === 'user' && msg.sender.name) {
-          content = `${msg.sender.name}: ${content}`;
+        // FIX: Use userInfo.name instead of sender.name
+        if (role === 'user' && msg.userInfo?.name) {
+          content = `${msg.userInfo.name}: ${content}`;
+        }
+
+        // Process files if they exist in this message
+        if (msg.files && msg.files.length > 0) {
+          const fileContents = msg.files
+            .map((file) => {
+              let fileDescription = `\n\n--- File: ${file.name}`;
+              if (file.language && file.language !== 'text') {
+                fileDescription += ` (${file.language})`;
+              }
+              fileDescription += ' ---\n';
+
+              // FIX: Use metadata.size instead of originalSize and truncated
+              // Check if file was truncated by comparing content length to metadata size
+              const wasTruncated = file.content.length < file.metadata.size;
+              if (wasTruncated) {
+                fileDescription += `Note: This file was truncated from ${file.metadata.size} to ${file.content.length} characters to fit within context limits.\n\n`;
+              }
+
+              fileDescription += file.content;
+              fileDescription += `\n--- End of ${file.name} ---`;
+
+              return fileDescription;
+            })
+            .join('\n\n');
+
+          content += fileContents;
         }
 
         messages.push({ role, content });
       }
 
-      // Add the current prompt
-      messages.push({ role: 'user', content: args.prompt });
+      // Prepare the current prompt with attached files
+      let currentPromptContent = args.prompt;
 
-      // Make the DeepSeek API request with context
+      // Add attached files directly to the current prompt
+      if (args.attachedFiles && args.attachedFiles.length > 0) {
+        const attachedFileContents = args.attachedFiles
+          .map((file) => {
+            let fileDescription = `\n\n--- Attached File: ${file.name}`;
+            if (file.language && file.language !== 'text') {
+              fileDescription += ` (${file.language})`;
+            }
+            fileDescription += ' ---\n';
+
+            fileDescription += file.content;
+            fileDescription += `\n--- End of ${file.name} ---`;
+
+            return fileDescription;
+          })
+          .join('\n\n');
+
+        currentPromptContent += attachedFileContents;
+      }
+
+      // Add the current prompt (with attached files)
+      messages.push({ role: 'user', content: currentPromptContent });
+
+      // Make the DeepSeek API request
       const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -138,7 +222,7 @@ export const getDeepSeekResponse = internalAction({
         content: aiResponse,
       });
 
-      // Send context and token usage info
+      // Send enhanced context and token usage info
       await sendContextUsageInfo(ctx, args.chatId, {
         totalTokens,
         contextTokens,
@@ -146,6 +230,9 @@ export const getDeepSeekResponse = internalAction({
         contextMessages: contextData.messages.length,
         hasSummary: !!contextData.summary,
         remainingTokens: usageResult.remainingTokens,
+        fileCount: contextData.fileCount + (args.attachedFiles?.length || 0),
+        filesTokens: contextData.filesTokenEstimate + attachedFilesTokens,
+        attachedFileCount: args.attachedFiles?.length || 0,
       });
 
       // Warning for low tokens
@@ -165,14 +252,13 @@ export const getDeepSeekResponse = internalAction({
     }
   },
 });
-
 function estimateTokenCount(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
-// Helper function to send detailed usage information
+// Enhanced helper function with attached file info
 async function sendContextUsageInfo(
-  ctx: ActionCtx, // Use Convex's ActionCtx type
+  ctx: ActionCtx,
   chatId: Id<'chats'>,
   usage: {
     totalTokens: number;
@@ -181,6 +267,9 @@ async function sendContextUsageInfo(
     contextMessages: number;
     hasSummary: boolean;
     remainingTokens: number;
+    fileCount?: number;
+    filesTokens?: number;
+    attachedFileCount?: number;
   }
 ) {
   const contextInfo =
@@ -188,13 +277,24 @@ async function sendContextUsageInfo(
       ? ` (${usage.contextMessages} context messages${usage.hasSummary ? ' + summary' : ''})`
       : '';
 
-  const usageMessage = `📊 Token Usage: ${usage.totalTokens} total tokens (${usage.contextTokens} context + ${usage.promptTokens} prompt)${contextInfo}. ${usage.remainingTokens} remaining this month.`;
+  const fileInfo =
+    usage.fileCount && usage.fileCount > 0
+      ? ` including ${usage.fileCount} files (${usage.filesTokens || 0} tokens)`
+      : '';
+
+  const attachedInfo =
+    usage.attachedFileCount && usage.attachedFileCount > 0
+      ? ` with ${usage.attachedFileCount} attached files`
+      : '';
+
+  const usageMessage = `📊 Token Usage: ${usage.totalTokens} total tokens (${usage.contextTokens} context + ${usage.promptTokens} prompt)${contextInfo}${fileInfo}${attachedInfo}. ${usage.remainingTokens} remaining this month.`;
 
   await ctx.runMutation(internal.chat.sendSystemMessage, {
     chatId,
     content: usageMessage,
   });
 }
+// Enhanced helper function to send detailed usage information
 export const getWikipediaSummary = internalAction({
   args: {
     topic: v.string(),
