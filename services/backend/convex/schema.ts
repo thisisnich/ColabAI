@@ -168,12 +168,31 @@ export default defineSchema({
     includedInContext: v.optional(v.boolean()), // Whether message is included in context
     isDeepSeekCommand: v.optional(v.boolean()), // Whether message starts with /deepseek
     contextRelevance: v.optional(v.number()), // AI-scored relevance (0-1) for smart filtering
+    updatedAt: v.optional(v.number()), // ADD THIS FIELD
+
+    files: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          name: v.string(),
+          language: v.string(),
+          content: v.string(),
+          metadata: v.object({
+            size: v.number(),
+            lines: v.number(),
+            estimatedTokens: v.number(),
+            fileType: v.string(),
+            uploadedAt: v.optional(v.number()), // ADD THIS FIELD
+          }),
+        })
+      )
+    ),
   })
     .index('by_chat_time', ['chatId', 'timestamp']) // For querying messages in a chat ordered by time
     .index('by_chat', ['chatId']) // For simple membership queries
     .index('by_chat_context', ['chatId', 'includedInContext'])
+    .index('by_user', ['userId'])
     .index('by_chat_deepseek', ['chatId', 'isDeepSeekCommand']),
-
   // Chat join codes table (Added for invite functionality)
   chatJoinCodes: defineTable({
     code: v.string(), // The join code
