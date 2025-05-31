@@ -26,6 +26,7 @@ import { ContextViewer } from './ContextViewer';
 import { FormattedMessageDisplay } from './MessageDisplay';
 import { MessageInput } from './MessageInput';
 
+import { useUserType } from '../lib/useUserTypes'; // Assuming this is the correct path
 import { Button } from './ui/button';
 import {
   DropdownMenu,
@@ -65,6 +66,8 @@ export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: Cha
   // ========================================
   // Queries
   // ========================================
+  const { isFullUser } = useUserType();
+
   const chatResult = useSessionQuery(api.chat.getChatDetails, { chatId });
   const messagesResult = useSessionQuery(api.chat.listMessages, { chatId });
   const currentUserRole = useSessionQuery(api.settings.getCurrentUserRole, { chatId });
@@ -187,15 +190,17 @@ export function ChatView({ chatId, onToggleSidebar, sidebarOpen, isMobile }: Cha
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>Chat Options</DropdownMenuLabel>
               <DropdownMenuSeparator />
-
               {(currentUserRole?.role === 'admin' || currentUserRole?.role === 'creator') && (
                 <ChatInvite chatId={chatId} />
               )}
               <ChatSettings chatId={chatId} />
-
-              <DropdownMenuSeparator />
-              <ContextSettings chatId={chatId} />
-              <ContextViewer chatId={chatId} />
+              {isFullUser && (
+                <>
+                  <DropdownMenuSeparator />
+                  <ContextSettings chatId={chatId} />
+                  <ContextViewer chatId={chatId} />
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

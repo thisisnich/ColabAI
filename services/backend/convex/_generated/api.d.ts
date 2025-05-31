@@ -30,6 +30,7 @@ import type * as migration from "../migration.js";
 import type * as presentations from "../presentations.js";
 import type * as serviceDesk from "../serviceDesk.js";
 import type * as settings from "../settings.js";
+import type * as toFull from "../toFull.js";
 import type * as tokens from "../tokens.js";
 
 /**
@@ -58,6 +59,7 @@ declare const fullApi: ApiFromModules<{
   presentations: typeof presentations;
   serviceDesk: typeof serviceDesk;
   settings: typeof settings;
+  toFull: typeof toFull;
   tokens: typeof tokens;
 }>;
 export declare const api: FilterApi<

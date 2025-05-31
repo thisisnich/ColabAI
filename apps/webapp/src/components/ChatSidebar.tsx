@@ -1,3 +1,4 @@
+import { useUserType } from '@/lib/useUserTypes';
 import { api } from '@workspace/backend/convex/_generated/api';
 import type { Id } from '@workspace/backend/convex/_generated/dataModel';
 import { useSessionMutation, useSessionQuery } from 'convex-helpers/react/sessions';
@@ -58,7 +59,7 @@ export function ChatSidebar({ onChatSelect, selectedChatId, className }: ChatSid
       setIsCreating(false);
     }
   };
-
+  const { isFullUser, isLoading } = useUserType();
   const openDeleteDialog = (chatId: Id<'chats'>, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent selecting the chat
     console.log('Opening delete dialog for chat ID:', chatId);
@@ -94,15 +95,17 @@ export function ChatSidebar({ onChatSelect, selectedChatId, className }: ChatSid
         <h2 className="font-semibold text-lg w-fit">Chats</h2>
         <div className="flex gap-1">
           <ChatJoin />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setNewChatDialogOpen(true)}
-            className="h-8 w-8"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="sr-only">New Chat</span>
-          </Button>
+          {isFullUser && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setNewChatDialogOpen(true)}
+              className="h-8 w-8"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="sr-only">New Chat</span>
+            </Button>
+          )}
         </div>
       </div>
       <div className="flex-1 overflow-y-auto p-2 space-y-2">
@@ -117,12 +120,20 @@ export function ChatSidebar({ onChatSelect, selectedChatId, className }: ChatSid
           // Empty state
           <div className="text-center p-8 border rounded-lg bg-card">
             <h3 className="font-medium mb-2">No chats yet</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Create a new chat to start messaging
-            </p>
-            <Button variant="outline" size="sm" onClick={() => setNewChatDialogOpen(true)}>
-              Create your first chat
-            </Button>
+            {isFullUser ? (
+              <>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Create a new chat to start messaging or wait for someone to invite you
+                </p>
+                <Button variant="outline" size="sm" onClick={() => setNewChatDialogOpen(true)}>
+                  Create your first chat
+                </Button>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground mb-4">
+                Wait for someone to invite you to a chat
+              </p>
+            )}
           </div>
         ) : (
           // Chat list
@@ -183,9 +194,11 @@ export function ChatSidebar({ onChatSelect, selectedChatId, className }: ChatSid
             >
               Cancel
             </Button>
-            <Button onClick={handleCreateChat} disabled={!newChatName.trim() || isCreating}>
-              {isCreating ? 'Creating...' : 'Create Chat'}
-            </Button>
+            {isFullUser && (
+              <Button onClick={handleCreateChat} disabled={!newChatName.trim() || isCreating}>
+                {isCreating ? 'Creating...' : 'Create Chat'}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
