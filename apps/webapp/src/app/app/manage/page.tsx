@@ -141,7 +141,9 @@ const TokenDashboard: React.FC = () => {
     );
   }
 
-  const usagePercentage = (tokenStats.monthlyTokensUsed / tokenStats.monthlyLimit) * 100;
+  // Calculate total available tokens (monthly + purchased)
+  const totalAvailableTokens = tokenStats.monthlyLimit + tokenStats.purchasedTokens;
+  const usagePercentage = (tokenStats.monthlyTokensUsed / totalAvailableTokens) * 100;
   const isRunningLow = tokenStats.availableTokens < 5000;
 
   const formatDate = (timestamp: number): string => {
@@ -253,7 +255,7 @@ const TokenDashboard: React.FC = () => {
                     {tokenStats.monthlyTokensUsed.toLocaleString()}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    of {tokenStats.monthlyLimit.toLocaleString()}
+                    of {totalAvailableTokens.toLocaleString()} available
                   </p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-blue-500" />
@@ -298,47 +300,6 @@ const TokenDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Recent Usage */}
-        <div className="border-t pt-6">
-          <h2 className="text-xl font-semibold mb-4">Recent Usage</h2>
-          <div className="border rounded-lg">
-            {tokenStats.recentUsage && tokenStats.recentUsage.length > 0 ? (
-              <div className="divide-y">
-                {tokenStats.recentUsage.map((usage, index) => (
-                  <div key={usage._id || index} className="flex items-center justify-between p-4">
-                    <div className="flex items-center space-x-3">
-                      <div
-                        className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                          usage.command === 'deepseek' ? 'bg-blue-500' : 'bg-green-500'
-                        }`}
-                      />
-                      <div className="min-w-0">
-                        <p className="font-medium capitalize truncate">{usage.command}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {formatDate(usage.timestamp)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right flex-shrink-0 ml-4">
-                      <p className="font-medium">{usage.tokensUsed.toLocaleString()}</p>
-                      {usage.cost && usage.cost > 0 && (
-                        <p className="text-sm text-muted-foreground">
-                          {formatCurrency(usage.cost)}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>No usage history yet</p>
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* Purchase Tokens */}
         <div className="border-t pt-6">
           <h2 className="text-xl font-semibold mb-2">Purchase Additional Tokens</h2>
@@ -464,6 +425,41 @@ const TokenDashboard: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Recent Usage */}
+      <div className="border-t pt-6">
+        <h2 className="text-xl font-semibold mb-4">Recent Usage</h2>
+        <div className="border rounded-lg">
+          {tokenStats.recentUsage && tokenStats.recentUsage.length > 0 ? (
+            <div className="divide-y">
+              {tokenStats.recentUsage.map((usage, index) => (
+                <div key={usage._id || index} className="flex items-center justify-between p-4">
+                  <div className="flex items-center space-x-3">
+                    <div
+                      className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                        usage.command === 'deepseek' ? 'bg-blue-500' : 'bg-green-500'
+                      }`}
+                    />
+                    <div className="min-w-0">
+                      <p className="font-medium capitalize truncate">{usage.command}</p>
+                      <p className="text-sm text-muted-foreground">{formatDate(usage.timestamp)}</p>
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0 ml-4">
+                    <p className="font-medium">{usage.tokensUsed.toLocaleString()}</p>
+                    {usage.cost && usage.cost > 0 && (
+                      <p className="text-sm text-muted-foreground">{formatCurrency(usage.cost)}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No usage history yet</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

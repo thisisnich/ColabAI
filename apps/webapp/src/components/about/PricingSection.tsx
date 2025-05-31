@@ -1,10 +1,12 @@
 import { PricingPlan } from './PricingPlan';
 export const PricingSection = () => {
   const plans = [
-    { name: 'Starter', price: '$0.99', tokens: '10K tokens', popular: false },
-    { name: 'Popular', price: '$2.49', tokens: '50K tokens', popular: true },
-    { name: 'Team', price: '$6.99', tokens: '250K tokens', popular: false },
-    { name: 'Enterprise', price: '$19.99', tokens: '1M tokens', popular: false },
+    { name: 'Starter', price: '$0.99', tokens: '100K tokens', popular: false },
+    { name: 'Popular', price: '$3.49', tokens: '500K tokens', popular: true },
+    { name: 'Team', price: '$6.99', tokens: '1.2M tokens', popular: false },
+    { name: 'Enterprise', price: '$10.99', tokens: '2.5M tokens', popular: false },
+    { name: 'Enterprise', price: '$15.49', tokens: '5 tokens', popular: false },
+    { name: 'Enterprise', price: '$19.99', tokens: '7.5M tokens', popular: false },
   ];
 
   return (

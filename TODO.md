@@ -19,10 +19,10 @@
 
 ## 💰 Manage
 - [x] Fix token pricing logic
-- [ ] Update API pricing
+- [x] Update API pricing
 - [x] Fix ui overflowing
 - [ ] correct monthly usage to show percentage of used
-- [ ] move api buy above usage
+- [x] move api buy above usage
 
 ## 🔐 Authentication
 - [ ] Set up authentication (Google OAuth preferred)
