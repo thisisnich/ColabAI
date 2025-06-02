@@ -382,6 +382,86 @@ export const getUserTokenStats = query({
   },
 });
 
+// Get total context usage - returns all token usage data
+export const getTotalContextUsage = query({
+  args: {
+    ...SessionIdArg,
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx, { sessionId: args.sessionId });
+    if (!user) throw new Error('You must be logged in');
+
+    const userTokens = await ctx.db
+      .query('userTokens')
+      .withIndex('by_user', (q) => q.eq('userId', user._id))
+      .unique();
+
+    if (!userTokens) {
+      return {
+        totalTokensUsed: 0,
+        monthlyTokensUsed: 0,
+        monthlyLimit: DEFAULT_MONTHLY_LIMIT,
+        purchasedTokens: 0,
+        availableTokens: DEFAULT_MONTHLY_LIMIT,
+        allUsageHistory: [],
+        allPurchases: [],
+        totalInputTokens: 0,
+        totalOutputTokens: 0,
+        totalCost: 0,
+        initialized: false,
+      };
+    }
+
+    // Check if reset is needed (read-only)
+    const currentMonth = getCurrentMonth();
+    const needsReset = userTokens.lastResetDate !== currentMonth;
+    const monthlyUsed = needsReset ? 0 : userTokens.monthlyTokensUsed;
+
+    // Get ALL usage history
+    const allUsageHistory = await ctx.db
+      .query('tokenUsageHistory')
+      .withIndex('by_user_time', (q) => q.eq('userId', user._id))
+      .order('desc')
+      .collect();
+
+    // Get ALL purchases
+    const allPurchases = await ctx.db
+      .query('tokenPurchases')
+      .withIndex('by_user_time', (q) => q.eq('userId', user._id))
+      .order('desc')
+      .collect();
+
+    // Calculate totals from usage history
+    const totalInputTokens = allUsageHistory.reduce(
+      (sum, usage) => sum + (usage.inputTokens || 0),
+      0
+    );
+    const totalOutputTokens = allUsageHistory.reduce(
+      (sum, usage) => sum + (usage.outputTokens || 0),
+      0
+    );
+    const totalCost = allUsageHistory.reduce((sum, usage) => sum + (usage.cost || 0), 0);
+
+    return {
+      totalTokensUsed: userTokens.totalTokensUsed,
+      monthlyTokensUsed: monthlyUsed,
+      monthlyLimit: userTokens.monthlyLimit,
+      purchasedTokens: userTokens.purchasedTokens,
+      availableTokens: userTokens.monthlyLimit + userTokens.purchasedTokens - monthlyUsed,
+      lastResetDate: userTokens.lastResetDate,
+      allUsageHistory,
+      allPurchases,
+      totalInputTokens,
+      totalOutputTokens,
+      totalCost,
+      initialized: true,
+      needsReset,
+      createdAt: userTokens.createdAt,
+      updatedAt: userTokens.updatedAt,
+    };
+  },
+});
+
 // Helper functions
 function getCurrentMonth(): string {
   const now = new Date();

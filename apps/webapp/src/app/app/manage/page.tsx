@@ -143,7 +143,7 @@ const TokenDashboard: React.FC = () => {
 
   // Calculate total available tokens (monthly + purchased)
   const totalAvailableTokens = tokenStats.monthlyLimit + tokenStats.purchasedTokens;
-  const usagePercentage = (tokenStats.monthlyTokensUsed / totalAvailableTokens) * 100;
+  const usagePercentage = (tokenStats.totalTokensUsed / totalAvailableTokens) * 100;
   const isRunningLow = tokenStats.availableTokens < 5000;
 
   const formatDate = (timestamp: number): string => {
@@ -250,9 +250,9 @@ const TokenDashboard: React.FC = () => {
             <div className="border rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Monthly Usage</p>
+                  <p className="text-sm font-medium text-muted-foreground">Total Usage</p>
                   <p className="text-2xl font-bold text-blue-600">
-                    {tokenStats.monthlyTokensUsed.toLocaleString()}
+                    {tokenStats.totalTokensUsed.toLocaleString()}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     of {totalAvailableTokens.toLocaleString()} available
