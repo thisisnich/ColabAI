@@ -5,7 +5,7 @@
 - [x] after closing context view, cant clikc anyth else.
 - [x] Setup so that anonymous accounts cant make new chats but can join. set myself as only full acc
 - [x] FIX MOBILE CHAT VIEW
-- [ ] FIX OPENING MENUs
+- [x] FIX OPENING MENUs
 - [ ]Fix mobile landscape view
 ## 🧠 AI Context
 - [x] Fix AI context settings (currently not functioning)

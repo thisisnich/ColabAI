@@ -1,7 +1,9 @@
 import { SessionIdArg } from 'convex-helpers/server/sessions';
 import { v } from 'convex/values';
+import { getAuthUser } from '../modules/auth/getAuthUser';
 import type { Id } from './_generated/dataModel';
 import { internalMutation, internalQuery, mutation, query } from './_generated/server';
+import type { MutationCtx, QueryCtx } from './_generated/server';
 
 // Constants
 const DEFAULT_MONTHLY_LIMIT = 100000; // Default monthly token limit
@@ -40,14 +42,14 @@ export const initializeUserTokens = mutation({
   },
 });
 
-// NEW: Initialize token tracking for authenticated user (session-based)
+// Initialize token tracking for authenticated user (session-based)
 export const initializeUserTokensFromSession = mutation({
   args: {
     monthlyLimit: v.optional(v.number()),
     ...SessionIdArg,
   },
   handler: async (ctx, args) => {
-    const user = await getAuthUser(ctx, args.sessionId);
+    const user = await getAuthUser(ctx, { sessionId: args.sessionId });
     if (!user) {
       throw new Error('You must be logged in to initialize token tracking');
     }
@@ -77,6 +79,42 @@ export const initializeUserTokensFromSession = mutation({
   },
 });
 
+// Reset monthly tokens if needed (internal mutation)
+export const resetMonthlyTokensIfNeeded = internalMutation({
+  args: {
+    userId: v.id('users'),
+  },
+  handler: async (ctx, args) => {
+    const userTokens = await ctx.db
+      .query('userTokens')
+      .withIndex('by_user', (q) => q.eq('userId', args.userId))
+      .unique();
+
+    if (!userTokens) {
+      return null;
+    }
+
+    const currentMonth = getCurrentMonth();
+
+    // Check if we need to reset monthly usage
+    if (userTokens.lastResetDate !== currentMonth) {
+      await ctx.db.patch(userTokens._id, {
+        monthlyTokensUsed: 0,
+        lastResetDate: currentMonth,
+        updatedAt: Date.now(),
+      });
+
+      return {
+        ...userTokens,
+        monthlyTokensUsed: 0,
+        lastResetDate: currentMonth,
+      };
+    }
+
+    return userTokens;
+  },
+});
+
 // Check if user has enough tokens for a request
 export const checkTokenLimit = internalQuery({
   args: {
@@ -84,7 +122,10 @@ export const checkTokenLimit = internalQuery({
     estimatedTokens: v.optional(v.number()), // Estimated tokens for the upcoming request
   },
   handler: async (ctx, args) => {
-    const userTokens = await getUserTokensWithReset(ctx, args.userId);
+    const userTokens = await ctx.db
+      .query('userTokens')
+      .withIndex('by_user', (q) => q.eq('userId', args.userId))
+      .unique();
 
     if (!userTokens) {
       return {
@@ -95,21 +136,26 @@ export const checkTokenLimit = internalQuery({
         totalUsed: 0,
         purchasedTokens: 0,
         reason: 'Token tracking not initialized',
+        needsReset: false,
       };
     }
 
-    const availableTokens =
-      userTokens.monthlyLimit + userTokens.purchasedTokens - userTokens.monthlyTokensUsed;
+    const currentMonth = getCurrentMonth();
+    const needsReset = userTokens.lastResetDate !== currentMonth;
+    const monthlyUsed = needsReset ? 0 : userTokens.monthlyTokensUsed;
+
+    const availableTokens = userTokens.monthlyLimit + userTokens.purchasedTokens - monthlyUsed;
     const hasTokens = availableTokens > (args.estimatedTokens ?? 0);
 
     return {
       hasTokens,
       availableTokens,
       monthlyLimit: userTokens.monthlyLimit,
-      monthlyUsed: userTokens.monthlyTokensUsed,
+      monthlyUsed,
       totalUsed: userTokens.totalTokensUsed,
       purchasedTokens: userTokens.purchasedTokens,
       reason: hasTokens ? null : 'Monthly token limit exceeded',
+      needsReset,
     };
   },
 });
@@ -125,8 +171,11 @@ export const recordTokenUsage = internalMutation({
     outputTokens: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    // Get user tokens and reset if needed
-    let userTokens = await getUserTokensWithReset(ctx, args.userId);
+    // Reset monthly tokens if needed first
+    let userTokens = await ctx.db
+      .query('userTokens')
+      .withIndex('by_user', (q) => q.eq('userId', args.userId))
+      .unique();
 
     if (!userTokens) {
       // Initialize if doesn't exist
@@ -144,6 +193,21 @@ export const recordTokenUsage = internalMutation({
     }
 
     if (!userTokens) throw new Error('Failed to initialize user tokens');
+
+    // Check if we need to reset monthly usage
+    const currentMonth = getCurrentMonth();
+    if (userTokens.lastResetDate !== currentMonth) {
+      await ctx.db.patch(userTokens._id, {
+        monthlyTokensUsed: 0,
+        lastResetDate: currentMonth,
+        updatedAt: Date.now(),
+      });
+      userTokens = {
+        ...userTokens,
+        monthlyTokensUsed: 0,
+        lastResetDate: currentMonth,
+      };
+    }
 
     // Calculate cost (optional)
     let cost: number | undefined;
@@ -184,23 +248,6 @@ export const recordTokenUsage = internalMutation({
   },
 });
 
-// Helper function to get authenticated user (matching invite.ts pattern)
-async function getAuthUser(ctx: any, sessionId: string) {
-  const existingSession = await ctx.db
-    .query('sessions')
-    .withIndex('by_sessionId', (q: { eq: (arg0: string, arg1: string) => any }) =>
-      q.eq('sessionId', sessionId)
-    )
-    .first();
-
-  if (!existingSession || !existingSession.userId) {
-    return null;
-  }
-
-  const user = await ctx.db.get(existingSession.userId);
-  return user;
-}
-
 // Add purchased tokens
 export const addPurchasedTokens = mutation({
   args: {
@@ -211,12 +258,15 @@ export const addPurchasedTokens = mutation({
     ...SessionIdArg,
   },
   handler: async (ctx, args) => {
-    const user = await getAuthUser(ctx, args.sessionId);
+    const user = await getAuthUser(ctx, { sessionId: args.sessionId });
     if (!user) {
       throw new Error('You must be logged in to purchase tokens');
     }
 
-    let userTokens = await getUserTokensWithReset(ctx, user._id);
+    let userTokens = await ctx.db
+      .query('userTokens')
+      .withIndex('by_user', (q) => q.eq('userId', user._id))
+      .unique();
 
     if (!userTokens) {
       // Initialize token tracking if it doesn't exist
@@ -235,6 +285,21 @@ export const addPurchasedTokens = mutation({
 
     if (!userTokens) {
       throw new Error('Failed to initialize user token tracking');
+    }
+
+    // Check if we need to reset monthly usage
+    const currentMonth = getCurrentMonth();
+    if (userTokens.lastResetDate !== currentMonth) {
+      await ctx.db.patch(userTokens._id, {
+        monthlyTokensUsed: 0,
+        lastResetDate: currentMonth,
+        updatedAt: Date.now(),
+      });
+      userTokens = {
+        ...userTokens,
+        monthlyTokensUsed: 0,
+        lastResetDate: currentMonth,
+      };
     }
 
     // Record the purchase
@@ -264,22 +329,30 @@ export const addPurchasedTokens = mutation({
   },
 });
 
-// FIXED: Get user's token usage statistics - now returns null when not initialized
+// Get user's token usage statistics
 export const getUserTokenStats = query({
   args: {
     limit: v.optional(v.number()),
     ...SessionIdArg,
   },
   handler: async (ctx, args) => {
-    const user = await getAuthUser(ctx, args.sessionId);
+    const user = await getAuthUser(ctx, { sessionId: args.sessionId });
     if (!user) throw new Error('You must be logged in');
 
-    const userTokens = await getUserTokensWithReset(ctx, user._id);
+    const userTokens = await ctx.db
+      .query('userTokens')
+      .withIndex('by_user', (q) => q.eq('userId', user._id))
+      .unique();
 
     // If user tokens don't exist, return null to indicate initialization is needed
     if (!userTokens) {
       return null;
     }
+
+    // Check if reset is needed (read-only, won't actually reset)
+    const currentMonth = getCurrentMonth();
+    const needsReset = userTokens.lastResetDate !== currentMonth;
+    const monthlyUsed = needsReset ? 0 : userTokens.monthlyTokensUsed;
 
     const recentUsage = await ctx.db
       .query('tokenUsageHistory')
@@ -296,52 +369,20 @@ export const getUserTokenStats = query({
 
     return {
       totalTokensUsed: userTokens.totalTokensUsed,
-      monthlyTokensUsed: userTokens.monthlyTokensUsed,
+      monthlyTokensUsed: monthlyUsed,
       monthlyLimit: userTokens.monthlyLimit,
       purchasedTokens: userTokens.purchasedTokens,
-      availableTokens:
-        userTokens.monthlyLimit + userTokens.purchasedTokens - userTokens.monthlyTokensUsed,
+      availableTokens: userTokens.monthlyLimit + userTokens.purchasedTokens - monthlyUsed,
       lastResetDate: userTokens.lastResetDate,
       recentUsage,
       monthlyPurchases,
       needsInitialization: false,
+      needsReset,
     };
   },
 });
 
 // Helper functions
-async function getUserTokensWithReset(ctx: any, userId: Id<'users'>) {
-  const userTokens = await ctx.db
-    .query('userTokens')
-    .withIndex('by_user', (q: { eq: (arg0: string, arg1: Id<'users'>) => any }) =>
-      q.eq('userId', userId)
-    )
-    .unique();
-
-  if (!userTokens) {
-    return null;
-  }
-
-  const currentMonth = getCurrentMonth();
-
-  // Check if we need to reset monthly usage
-  if (userTokens.lastResetDate !== currentMonth) {
-    await ctx.db.patch(userTokens._id, {
-      monthlyTokensUsed: 0,
-      lastResetDate: currentMonth,
-      updatedAt: Date.now(),
-    });
-
-    return {
-      ...userTokens,
-      monthlyTokensUsed: 0,
-      lastResetDate: currentMonth,
-    };
-  }
-
-  return userTokens;
-}
-
 function getCurrentMonth(): string {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
